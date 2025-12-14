@@ -92,10 +92,20 @@ ifeq ($(OS_ARCH), OpenVMS)
 DEFINES		+= -DGENERIC_MOTIF_REDEFINES
 endif
 
+# BEGIN AGPLv3 MODIFICATION - blubskye 2025
+# Custom rule to build the standalone object with explicit prerequisite
+# Use c++ directly instead of $(CXX) because hcpp wrapper doesn't handle -o correctly
+# when the output name differs from the source file base name
+# Also added $(srcdir)/ prefix for proper out-of-tree builds
+# This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
 ifndef MOZ_ENABLE_PHOTON
-XRemoteClient_standalone.$(OBJ_SUFFIX): XRemoteClient.cpp
-	$(CXX) $(OUTOPTION)$@ -c $(COMPILE_CXXFLAGS) $<
+XRemoteClient_standalone.$(OBJ_SUFFIX): $(srcdir)/XRemoteClient.cpp
+	c++ $(OUTOPTION)$@ -c $(COMPILE_CXXFLAGS) $<
 else
-XRemoteClient_standalone.$(OBJ_SUFFIX): PhRemoteClient.cpp
-	$(CXX) $(OUTOPTION)$@ -c $(COMPILE_CXXFLAGS) $<
+XRemoteClient_standalone.$(OBJ_SUFFIX): $(srcdir)/PhRemoteClient.cpp
+	c++ $(OUTOPTION)$@ -c $(COMPILE_CXXFLAGS) $<
 endif
+
+# Force program to wait for standalone object (fixes parallel build race condition)
+$(PROGRAM): | XRemoteClient_standalone.$(OBJ_SUFFIX)
+# END AGPLv3 MODIFICATION

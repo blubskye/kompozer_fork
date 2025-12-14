@@ -2541,6 +2541,13 @@ int sqlite3pager_release_memory(int nReq){
 ** Since _lookup() never goes to disk, it never has to deal with locks
 ** or journal files.
 */
+/* BEGIN AGPLv3 MODIFICATION - blubskye 2025 */
+/* Forward declaration needed for modern C/C++ compilers */
+/* This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0 */
+int sqlite3pager_get2(Pager *pPager, Pgno pgno, void **ppPage,
+                      unsigned char* pDataToFill);
+/* END AGPLv3 MODIFICATION */
+
 int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   /* This just passes through to our modified version with a NULL data pointer */
   return sqlite3pager_get2(pPager, pgno, ppPage, 0);

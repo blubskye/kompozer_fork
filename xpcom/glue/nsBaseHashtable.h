@@ -121,9 +121,13 @@ public:
    * @return PR_TRUE if the key exists. If key does not exist, pData is not
    *   modified.
    */
+  // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+  // Added 'this->' prefix for C++ two-phase lookup compliance with modern compilers
+  // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
   PRBool Get(KeyType aKey, UserDataType* pData) const
   {
-    EntryType* ent = GetEntry(aKey);
+    EntryType* ent = this->GetEntry(aKey);
+  // END AGPLv3 MODIFICATION (continues in Put and Remove methods below)
 
     if (!ent)
       return PR_FALSE;
@@ -142,7 +146,7 @@ public:
    */
   PRBool Put(KeyType aKey, UserDataType aData)
   {
-    EntryType* ent = PutEntry(aKey);
+    EntryType* ent = this->PutEntry(aKey);
 
     if (!ent)
       return PR_FALSE;
@@ -156,7 +160,7 @@ public:
    * remove the data for the associated key
    * @param aKey the key to remove from the hashtable
    */
-  void Remove(KeyType aKey) { RemoveEntry(aKey); }
+  void Remove(KeyType aKey) { this->RemoveEntry(aKey); }
 
   /**
    * function type provided by the application for enumeration.

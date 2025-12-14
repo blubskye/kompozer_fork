@@ -104,6 +104,12 @@ foreach $obj (keys %alldeps) {
 
 # Output objects to rebuild (if needed).
 if (@objs) {
+  # BEGIN AGPLv3 MODIFICATION - blubskye 2025
+  # Sort objects to ensure consistent output (fixes hash ordering issues
+  # in modern Perl where hash iteration order is randomized)
+  # This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+  @objs = sort @objs;
+  # END AGPLv3 MODIFICATION
   $new_output = "@objs: FORCE\n";
 
   # Read in the current dependencies file.

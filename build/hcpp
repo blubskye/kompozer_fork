@@ -56,10 +56,14 @@ PLATFORM=`uname -s`
 for i in $*
 do
 	[ ${GET_OBJECT} -eq 1 ]  && {
+	# BEGIN AGPLv3 MODIFICATION - blubskye 2025
+	# Fixed object path handling for modern GCC compilation
+	# This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
 	case $i in
 		./*/*.o)	OBJECT="$i"
-			OPTS="${OPTS} -o"
+			OPTS="${OPTS} -o $i"
    			DASH_O=1
+			i=""
 			;;
 		./*.o)	OBJECT="`basename $i`"
 			i=""
@@ -67,12 +71,17 @@ do
 			;;
 		*.o)	if [ $i = `basename $i` ]
 			then
+				OBJECT="$i"
 				i=""
 			else
-				OPTS="${OPTS} -o"
+				# Full path - keep it in OPTS and set OBJECT
+				OPTS="${OPTS} -o $i"
+				OBJECT="$i"
+				i=""
    				DASH_O=1
 			fi
 			;;
+	# END AGPLv3 MODIFICATION
 		*)	OPTS="${OPTS} -o $i"
    			DASH_O=1
 			i=""

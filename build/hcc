@@ -65,7 +65,13 @@ do
 				OBJECT="$i"
 				i=""
 			else
-				OPTS="${OPTS} -o"
+				# BEGIN AGPLv3 MODIFICATION - blubskye 2025
+				# Full path - keep it in OPTS and set OBJECT (fixes modern GCC compilation)
+				# This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+				OPTS="${OPTS} -o $i"
+				OBJECT="$i"
+				i=""
+				# END AGPLv3 MODIFICATION
 			fi
    			DASH_O=1
 			;;
@@ -109,3 +115,5 @@ ${CC} ${OPTS} || exit $?
 [ $OBJ = $OBJECT ] && exit 0
 
 [ -f $OBJ ] && mv -f $OBJ $OBJECT
+
+exit 0

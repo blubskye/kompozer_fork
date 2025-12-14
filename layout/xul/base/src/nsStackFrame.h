@@ -52,7 +52,11 @@ class nsStackFrame : public nsBoxFrame
 {
 public:
 
-  friend nsresult NS_NewStackFrame(nsIPresShell* aPresShell, nsIFrame** aNewFrame, nsIBoxLayout* aLayout = nsnull);
+  // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+  // Removed default argument (= nsnull) - default args not allowed in friend declarations
+  // with modern C++ compilers. This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+  friend nsresult NS_NewStackFrame(nsIPresShell* aPresShell, nsIFrame** aNewFrame, nsIBoxLayout* aLayout);
+  // END AGPLv3 MODIFICATION
 
 #ifdef NS_DEBUG
   NS_IMETHOD GetFrameName(nsAString& aResult) const

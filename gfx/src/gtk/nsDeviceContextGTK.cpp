@@ -67,7 +67,13 @@
 
 #ifdef MOZ_WIDGET_GTK2
 #include <pango/pango.h>
+/* BEGIN AGPLv3 MODIFICATION - blubskye 2025 */
+/* Guard deprecated pangox.h include (removed in modern Pango) */
+/* This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0 */
+#ifdef MOZ_ENABLE_COREXFONTS
 #include <pango/pangox.h>
+#endif
+/* END AGPLv3 MODIFICATION */
 #include <pango/pango-fontmap.h>
 #endif
 

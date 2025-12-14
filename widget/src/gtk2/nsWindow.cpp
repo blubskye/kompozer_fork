@@ -1545,6 +1545,13 @@ nsWindow::OnDeleteEvent(GtkWidget *aWidget, GdkEventAny *aEvent)
 void
 nsWindow::OnEnterNotifyEvent(GtkWidget *aWidget, GdkEventCrossing *aEvent)
 {
+    // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+    // Guard against events on destroyed windows (prevents segfault on modern systems)
+    // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+    if (mIsDestroyed)
+        return;
+    // END AGPLv3 MODIFICATION
+
     // XXXldb Is this the right test for embedding cases?
     if (aEvent->subwindow != NULL)
         return;
@@ -1563,6 +1570,13 @@ nsWindow::OnEnterNotifyEvent(GtkWidget *aWidget, GdkEventCrossing *aEvent)
 void
 nsWindow::OnLeaveNotifyEvent(GtkWidget *aWidget, GdkEventCrossing *aEvent)
 {
+    // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+    // Guard against events on destroyed windows (prevents segfault on modern systems)
+    // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+    if (mIsDestroyed)
+        return;
+    // END AGPLv3 MODIFICATION
+
     // XXXldb Is this the right test for embedding cases?
     if (aEvent->subwindow != NULL)
         return;
@@ -1581,6 +1595,13 @@ nsWindow::OnLeaveNotifyEvent(GtkWidget *aWidget, GdkEventCrossing *aEvent)
 void
 nsWindow::OnMotionNotifyEvent(GtkWidget *aWidget, GdkEventMotion *aEvent)
 {
+    // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+    // Guard against events on destroyed windows (prevents segfault on modern systems)
+    // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+    if (mIsDestroyed)
+        return;
+    // END AGPLv3 MODIFICATION
+
     // when we receive this, it must be that the gtk dragging is over,
     // it is dropped either in or out of mozilla, clear the flag
     sIsDraggingOutOf = PR_FALSE;

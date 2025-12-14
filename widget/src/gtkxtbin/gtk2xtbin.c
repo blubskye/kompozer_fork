@@ -178,14 +178,26 @@ xt_event_dispatch (GSource*  source_data,
 
   GDK_THREADS_LEAVE ();
 
-  return TRUE;  
+  return TRUE;
 }
+
+/* BEGIN AGPLv3 MODIFICATION - blubskye 2025 */
+/* Added explicit finalize function instead of using g_free directly */
+/* g_free cannot be used as a GDestroyNotify with strict function pointer types */
+/* This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0 */
+static void
+xt_event_source_finalize(GSource *source)
+{
+  g_free(source);
+}
+/* END AGPLv3 MODIFICATION */
 
 static GSourceFuncs xt_event_funcs = {
   xt_event_prepare,
   xt_event_check,
   xt_event_dispatch,
-  g_free,
+  /* AGPLv3 MOD: use wrapper function instead of g_free - blubskye 2025 */
+  xt_event_source_finalize,
   (GSourceFunc)NULL,
   (GSourceDummyMarshal)NULL
 };

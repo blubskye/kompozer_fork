@@ -341,8 +341,12 @@ typedef PRUint32 PK11AttrFlags;
 /* default module configuration strings */
 #define SECMOD_SLOT_FLAGS "slotFlags=[RSA,DSA,DH,RC2,RC4,DES,RANDOM,SHA1,MD5,MD2,SSL,TLS,AES,SHA256,SHA512]"
 
+/* BEGIN AGPLv3 MODIFICATION - blubskye 2025 */
+/* Fixed C++11 string literal concatenation (spaces between string and macro) */
+/* This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0 */
 #define SECMOD_MAKE_NSS_FLAGS(fips,slot) \
-"Flags=internal,critical"fips" slotparams=("#slot"={"SECMOD_SLOT_FLAGS"})"
+"Flags=internal,critical" fips " slotparams=(" #slot "={" SECMOD_SLOT_FLAGS "})"
+/* END AGPLv3 MODIFICATION */
 
 #define SECMOD_INT_NAME "NSS Internal PKCS #11 Module"
 #define SECMOD_INT_FLAGS SECMOD_MAKE_NSS_FLAGS("",1)

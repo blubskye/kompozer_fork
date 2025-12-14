@@ -1975,7 +1975,11 @@ static REGERR nr_RegAddKey( REGFILE *reg, RKEY key, char *path, RKEY *newKey, XP
     REGOFF      start;
     REGOFF      parent;
     char        namebuf[MAXREGNAMELEN];
-    char        *p;
+    /* BEGIN AGPLv3 MODIFICATION - blubskye 2025 */
+    /* Changed from char* to const char* for modern C/C++ compiler compatibility */
+    /* This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0 */
+    const char  *p;
+    /* END AGPLv3 MODIFICATION */
 
     XP_ASSERT( regStartCount > 0 );
     XP_ASSERT( reg != NULL );

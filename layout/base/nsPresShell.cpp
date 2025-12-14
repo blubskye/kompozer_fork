@@ -21,7 +21,7 @@
  *
  * Contributor(s):
  *   Steve Clark <buster@netscape.com>
- *   Håkan Waara <hwaara@chello.se>
+ *   Hï¿½kan Waara <hwaara@chello.se>
  *   Dan Rosen <dr@netscape.com>
  *   Daniel Glazman <glazman@netscape.com>
  *   Mats Palmgren <mats.palmgren@bredband.net>
@@ -6488,9 +6488,15 @@ PresShell::HandleEventInternal(nsEvent* aEvent, nsIView *aView,
   // coordinates right....
   nsPoint offsetOfaView(0,0);
   if (aView) {
-    nsIView* rootView;
+    // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+    // Initialize rootView to null and check before use (prevents segfault on modern systems)
+    // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+    nsIView* rootView = nsnull;
     mViewManager->GetRootView(rootView);
-    offsetOfaView = aView->GetOffsetTo(rootView);
+    if (rootView) {
+      offsetOfaView = aView->GetOffsetTo(rootView);
+    }
+    // END AGPLv3 MODIFICATION
   }
 
   if (!NS_EVENT_NEEDS_FRAME(aEvent) || GetCurrentEventFrame()) {
@@ -6567,12 +6573,18 @@ PresShell::HandleEventInternal(nsEvent* aEvent, nsIView *aView,
           if (aView) {
             NS_ASSERTION(mViewManager,
                          "How did GetCurrentEventFrame() succeed?");
-            nsIView* rootView;
+            // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+            // Initialize views to null and check before use (prevents segfault on modern systems)
+            // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+            nsIView* rootView = nsnull;
             mViewManager->GetRootView(rootView);
-            nsIView* frameView;
+            nsIView* frameView = nsnull;
             nsPoint pt;
             mCurrentEventFrame->GetOffsetFromView(pt, &frameView);
-            offset = frameView->GetOffsetTo(rootView) - offsetOfaView;
+            if (rootView && frameView) {
+              offset = frameView->GetOffsetTo(rootView) - offsetOfaView;
+            }
+            // END AGPLv3 MODIFICATION
           }
   
           // Transform aEvent->point from aView's coordinate system to
