@@ -1209,7 +1209,7 @@ done
 
 if test -z "$COMPILE_ENVIRONMENT"; then
 if test -z "$NSINSTALL_BIN" || test "$NSINSTALL_BIN" = ":"; then
-   for ac_prog in $PYTHON python
+   for ac_prog in $PYTHON python3 python
 do
 # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -1250,7 +1250,7 @@ test -n "$PYTHON" && break
 done
 
    if test -z "$PYTHON"; then
-       { echo "configure: error: python was not found in \$PATH" 1>&2; exit 1; }
+       { echo "configure: error: python3 was not found in \$PATH" 1>&2; exit 1; }
    fi
    echo PYTHON="$PYTHON"
    NSINSTALL_BIN="$PYTHON \$(topsrcdir)/config/nsinstall.py"
@@ -1674,7 +1674,7 @@ cat > conftest.$ac_ext << EOF
 #line 1675 "configure"
 #include "confdefs.h"
 
-main(){return(0);}
+int main(void){return(0);}
 EOF
 if { (eval echo configure:1680: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_cv_prog_cc_works=yes
@@ -1853,7 +1853,7 @@ cat > conftest.$ac_ext << EOF
 #line 1854 "configure"
 #include "confdefs.h"
 
-int main(){return(0);}
+int main(void){return(0);}
 EOF
 if { (eval echo configure:1859: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_cv_prog_cxx_works=yes
@@ -2304,7 +2304,7 @@ cat > conftest.$ac_ext << EOF
 #line 2305 "configure"
 #include "confdefs.h"
 
-main(){return(0);}
+int main(void){return(0);}
 EOF
 if { (eval echo configure:2310: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_cv_prog_cc_works=yes
@@ -2447,7 +2447,7 @@ cat > conftest.$ac_ext << EOF
 #line 2448 "configure"
 #include "confdefs.h"
 
-int main(){return(0);}
+int main(void){return(0);}
 EOF
 if { (eval echo configure:2453: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_cv_prog_cxx_works=yes
@@ -19467,8 +19467,8 @@ fi
 
 if test `echo "$MOZ_EXTENSIONS" | grep -c python/xpcom` -ne 0; then
         if test -z "$PYTHON"; then
-        # Extract the first word of "python", so it can be a program name with args.
-set dummy python; ac_word=$2
+        # Extract the first word of "python3", so it can be a program name with args.
+set dummy python3; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
 echo "configure:19474: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_PYTHON'+set}'`\" = set"; then
@@ -19508,12 +19508,12 @@ fi
                 PYTHON=`cygpath -t mixed $PYTHON`
     fi
     if test ! -x "$PYTHON"; then
-        { echo "configure: error: Could not find Python - please adjust your PATH, or set PYTHON." 1>&2; exit 1; }
+        { echo "configure: error: Could not find Python3 - please adjust your PATH, or set PYTHON." 1>&2; exit 1; }
     fi
     MOZ_PYTHON=$PYTHON
-        MOZ_PYTHON_VER=`$PYTHON -c "import sys;print '%d%d' % sys.version_info[0:2]"`
-    MOZ_PYTHON_VER_DOTTED=`$PYTHON -c "import sys;print '%d.%d' % sys.version_info[0:2]"`
-        MOZ_PYTHON_PREFIX=`$PYTHON -c "import sys; print sys.prefix"`
+        MOZ_PYTHON_VER=`$PYTHON -c "import sys;print('%d%d' % sys.version_info[0:2])"`
+    MOZ_PYTHON_VER_DOTTED=`$PYTHON -c "import sys;print('%d.%d' % sys.version_info[0:2])"`
+        MOZ_PYTHON_PREFIX=`$PYTHON -c "import sys; print(sys.prefix)"`
         if test "$OS_ARCH" = "WINNT"; then
         MOZ_PYTHON_PREFIX=`cygpath -t mixed $MOZ_PYTHON_PREFIX`
                                 MOZ_PYTHON_DLL_SUFFIX=.pyd
@@ -19522,7 +19522,7 @@ fi
     else
                 MOZ_PYTHON_DLL_SUFFIX=$DLL_SUFFIX
         PYTHON_INCLUDE_SRC=$MOZ_PYTHON_PREFIX/include/python$MOZ_PYTHON_VER_DOTTED
-        PYTHON_LIB_SRC=`$PYTHON  -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+        PYTHON_LIB_SRC=`$PYTHON  -c 'import sysconfig; print(sysconfig.get_config_var("LIBPL"))'`
         if test ! -f $PYTHON_INCLUDE_SRC/Python.h; then
             { echo "configure: error: Include directory $PYTHON_INCLUDE_SRC not found or does not contain development headers" 1>&2; exit 1; }
         fi
@@ -20047,9 +20047,9 @@ EOF
 
 
 if test "$USING_HCC"; then
-   CC='${topsrcdir}/build/hcc'
+   CC="${srcdir}/build/hcc"
    CC="$CC '$_OLDCC'"
-   CXX='${topsrcdir}/build/hcpp'
+   CXX="${srcdir}/build/hcpp"
    CXX="$CXX '$_OLDCXX'"
    
    
@@ -20064,16 +20064,17 @@ if test "$MOZ_X11"; then
 #include "confdefs.h"
 
         #include <stdio.h>
+        #include <stdlib.h>
         #include <X11/Xlib.h>
-    
-int main() {
+
+int main(void) {
 
         Display *dpy = 0;
         if ((dpy = XOpenDisplay(NULL)) == NULL) {
             fprintf(stderr, ": can't open %s\n", XDisplayName(NULL));
             exit(1);
         }
-    
+
 ; return 0; }
 EOF
 if { (eval echo configure:20080: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then

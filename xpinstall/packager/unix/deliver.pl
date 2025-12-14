@@ -272,7 +272,7 @@ sub RecursiveStrip
     find({ wanted => \&find_libraries, no_chdir => 1 }, $targetDir);
 
     # strip all strippable files
-    system("strip @libraryList") if (defined(@libraryList));
+    system("strip @libraryList") if (@libraryList);
 }
 
 sub find_libraries

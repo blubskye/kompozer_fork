@@ -184,7 +184,7 @@ sub RecursiveStrip
     @dirEntries = <$targetDir/*>;
 
     # strip all .so files
-    system("strip @libraryList") if (defined(@libraryList));
+    system("strip @libraryList") if (@libraryList);
 }
 
 sub find_libraries

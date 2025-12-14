@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Script for generating the assembler code requried for virtual function
 # stubs for SuperH processor in little-endian mode (perhaps it works big-endian
 # too, I haven't checked). 
