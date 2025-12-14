@@ -145,10 +145,21 @@ var gHelpers = {
     return mimeInfo;
   },
   
+  // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+  // Modified run() to wrap app execution with env -u on Linux to clear
+  // LD_LIBRARY_PATH and prevent library version conflicts with Firefox/etc.
   run : function(url, appPath, appArgs, blocking) {
     var result = 0;
     var appFile = this.newLocalFile(appPath);
-    
+
+    // Check if we're on Linux - if so, wrap with env to clear LD_LIBRARY_PATH
+    var isLinux = false;
+    try {
+      var xr = Components.classes["@mozilla.org/xre/app-info;1"]
+                         .getService(Components.interfaces.nsIXULRuntime);
+      isLinux = (xr.OS == "Linux");
+    } catch (e) {}
+
     // nsIProcess
     if ((appArgs) || (/^http|^ftp/i.test(url)) || (blocking)) { // will NOT work on MacOS X, sorry :-(
       if (!appArgs)
@@ -156,16 +167,35 @@ var gHelpers = {
       appArgs.push(this.url2path(url));
       var len = appArgs.length;
       try {
-        var process = this.newProcess(appFile);
-        result = process.run(blocking, appArgs, len);
+        var process;
+        var actualArgs;
+        if (isLinux) {
+          // On Linux, wrap with env -u to clear LD_LIBRARY_PATH
+          var envFile = Components.classes["@mozilla.org/file/local;1"]
+                                  .createInstance(Components.interfaces.nsILocalFile);
+          envFile.initWithPath("/usr/bin/env");
+          process = this.newProcess(envFile);
+          // Build args: -u LD_LIBRARY_PATH -u MOZILLA_FIVE_HOME -u LD_PRELOAD <appPath> <original args>
+          actualArgs = ["-u", "LD_LIBRARY_PATH", "-u", "MOZILLA_FIVE_HOME", "-u", "LD_PRELOAD", appPath];
+          for (var i = 0; i < appArgs.length; i++) {
+            actualArgs.push(appArgs[i]);
+          }
+          dump("[DEBUG run] Linux: wrapping with env -u, actualArgs=" + actualArgs.join(" ") + "\n");
+          result = process.run(blocking, actualArgs, actualArgs.length);
+        } else {
+          process = this.newProcess(appFile);
+          result = process.run(blocking, appArgs, len);
+        }
         if (len) appArgs[len-1] = this.hidePassword(appArgs[len-1]);
         this.trace("started application '" + appPath + "' with " + len + " params: '" + appArgs + "'");
       } catch(e) {
+        dump("[DEBUG run] Exception: " + e + "\n");
         if (len) appArgs[len-1] = this.hidePassword(appArgs[len-1]);
         this.trace("failed to run application '" + appPath + "' with " + len + " params: '" + appArgs + "'");
         return true;
       }
-    } 
+    }
+  // END AGPLv3 MODIFICATION 
     
     // nsIMIMEService
     else {  // MacOS X hack: use nsIMIMEService if there is no other arguments than the *local* file to edit
@@ -186,12 +216,44 @@ var gHelpers = {
      return result;
   },
 
+  // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+  // Modified OpenUrl to use xdg-open with clean environment on Linux.
+  // This prevents KompoZer's LD_LIBRARY_PATH from polluting child processes
+  // like Firefox, which need system libraries (especially newer NSS).
+  // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
   OpenUrl: function(url) {              // open URL with system default app
+    dump("[DEBUG gHelpers.OpenUrl] Called with url: " + url + "\n");
     if (!url)
       url = GetDocumentUrl();
     try {
+      // On Linux, use xdg-open with env wrapper to clear LD_LIBRARY_PATH
+      // This prevents KompoZer's bundled libraries from conflicting with
+      // external browsers like Firefox
+      dump("[DEBUG] Checking OS...\n");
+      var xr = Components.classes["@mozilla.org/xre/app-info;1"]
+                         .getService(Components.interfaces.nsIXULRuntime);
+      dump("[DEBUG] OS is: " + xr.OS + "\n");
+      if (xr.OS == "Linux") {
+        dump("[DEBUG] Using xdg-open with clean env for: " + url + "\n");
+        // Use env to clear problematic environment variables before xdg-open
+        var envFile = Components.classes["@mozilla.org/file/local;1"]
+                                .createInstance(Components.interfaces.nsILocalFile);
+        envFile.initWithPath("/usr/bin/env");
+        var process = Components.classes["@mozilla.org/process/util;1"]
+                               .createInstance(Components.interfaces.nsIProcess);
+        process.init(envFile);
+        // Arguments: -u LD_LIBRARY_PATH -u MOZILLA_FIVE_HOME -u LD_PRELOAD xdg-open <url>
+        var args = ["-u", "LD_LIBRARY_PATH", "-u", "MOZILLA_FIVE_HOME", "-u", "LD_PRELOAD", "xdg-open", url];
+        dump("[DEBUG] Running: /usr/bin/env " + args.join(" ") + "\n");
+        process.run(false, args, args.length);
+        dump("[DEBUG] process.run() completed\n");
+        this.trace("opened URL '" + this.hidePassword(url) + "' with xdg-open (clean env)");
+        return;
+      }
+      // END AGPLv3 MODIFICATION
+
       // nsIMIMEService
-      if (/^file:/i.test(url)) { 
+      if (/^file:/i.test(url)) {
         var dataFile = this.newLocalFile(url);
         dataFile.launch(); // doesn't work on Linux
         // using MIME type for local files (doesn't work on Linux either)
@@ -225,17 +287,22 @@ var gHelpers = {
   },
   
   OpenUrlWith: function(url, helper) {  // open URL with preferred app
+    dump("[DEBUG OpenUrlWith] Called with url=" + url + ", helper=" + helper + "\n");
     // get path and args
     var usys, path, args;
-    try { 
+    try {
       usys = this.helpers.getBoolPref(helper + ".useSystem");
       path = this.helpers.getCharPref(helper + ".path");
       args = this.helpers.getCharPref(helper + ".args");
-    } catch (e) {}
-    
+    } catch (e) {
+      dump("[DEBUG OpenUrlWith] Exception getting prefs: " + e + "\n");
+    }
+    dump("[DEBUG OpenUrlWith] usys=" + usys + ", path=" + path + "\n");
+
     // launch editor
     if (usys || !path || !path.length)  {
       // system default browser
+      dump("[DEBUG OpenUrlWith] Calling OpenUrl\n");
       return this.OpenUrl(url);
     } else {
       // user selected app

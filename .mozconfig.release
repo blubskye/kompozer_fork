@@ -2,7 +2,7 @@
 # Updated for Fedora 40+ (2024+)
 
 # build in a separate directory
-mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obj-kompozer-debug
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obj-kompozer
 
 # build the standalone composer
 mk_add_options MOZ_CO_PROJECT=composer
@@ -15,13 +15,10 @@ mk_add_options MOZ_STANDALONE_COMPOSER=1
 
 export OS_LIBS="-lc -lpthread"
 
-# build in DEBUG mode with stack tracing
-ac_add_options --disable-optimize
-ac_add_options --enable-debug
+# build in release mode
+ac_add_options --enable-optimize
+ac_add_options --disable-debug
 ac_add_options --disable-tests
-# Additional debug options for full stack tracing
-ac_add_options --enable-debug-symbols
-ac_add_options --disable-jemalloc
 
 # required
 ac_add_options --enable-xpfe-components

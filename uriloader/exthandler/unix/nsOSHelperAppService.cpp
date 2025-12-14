@@ -68,6 +68,15 @@
 #include "nsAutoPtr.h"
 #include <stdlib.h>		// for system()
 
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Added for fork/exec to launch xdg-open with clean environment
+// This prevents KompoZer's LD_LIBRARY_PATH from polluting child processes
+// This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+// END AGPLv3 MODIFICATION
+
 #define LOG(args) PR_LOG(mLog, PR_LOG_DEBUG, args)
 #define LOG_ENABLED() PR_LOG_TEST(mLog, PR_LOG_DEBUG)
 
@@ -1258,45 +1267,51 @@ NS_IMETHODIMP nsOSHelperAppService::ExternalProtocolHandlerExists(const char * a
   return NS_OK;
 }
 
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Replaced original LoadUriInternal to use fork/exec with clean environment.
+// This prevents KompoZer's bundled libraries (especially old NSS) from
+// polluting child processes like Firefox, which need system libraries.
+// Uses xdg-open for desktop-agnostic URL handling (works on X11 and Wayland).
+// This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
 nsresult nsOSHelperAppService::LoadUriInternal(nsIURI * aURI)
 {
-  // Gets a string pref network.protocol-handler.app.<scheme>
-  // and executes it
-  LOG(("-- nsOSHelperAppService::LoadUrl\n"));
+  LOG(("-- nsOSHelperAppService::LoadUriInternal\n"));
 
-  nsCAutoString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
-  if (NS_FAILED(rv)) // need a scheme
+  nsCAutoString spec;
+  nsresult rv = aURI->GetAsciiSpec(spec);
+  if (NS_FAILED(rv))
     return rv;
 
-  nsCOMPtr<nsIFile> appFile;
-  rv = GetHandlerAppFromPrefs(scheme.get(), getter_AddRefs(appFile));
-  if (NS_SUCCEEDED(rv)) {
-    // Let's not support passing arguments for now
-    nsCOMPtr<nsIProcess> proc(do_CreateInstance("@mozilla.org/process/util;1", &rv));
-    if (NS_FAILED(rv))
-      return rv;
+  fprintf(stderr, "[DEBUG nsOSHelperAppService::LoadUriInternal] URL: %s\n", spec.get());
+  fprintf(stderr, "[DEBUG] LD_LIBRARY_PATH: %s\n", getenv("LD_LIBRARY_PATH") ? getenv("LD_LIBRARY_PATH") : "(null)");
 
-    rv = proc->Init(appFile);
-    if (NS_FAILED(rv))
-      return rv;
+  // Use fork/exec with env -u to clear problematic environment variables
+  // before launching xdg-open. This prevents library conflicts.
+  pid_t pid = fork();
+  fprintf(stderr, "[DEBUG] fork() returned: %d\n", (int)pid);
 
-    nsCAutoString spec;
-    rv = aURI->GetAsciiSpec(spec);
-    if (NS_FAILED(rv))
-      return rv;
-
-    const char* args[] = { spec.get() };
-    PRUint32 tmp;
-    return proc->Run(/*blocking*/PR_FALSE, args, NS_ARRAY_LENGTH(args), &tmp);
+  if (pid == 0) {
+    // Child process - use env to clear library paths then exec xdg-open
+    fprintf(stderr, "[DEBUG] Child: about to exec xdg-open %s\n", spec.get());
+    execl("/usr/bin/env", "env",
+          "-u", "LD_LIBRARY_PATH",
+          "-u", "MOZILLA_FIVE_HOME",
+          "-u", "LD_PRELOAD",
+          "xdg-open", spec.get(), (char *)NULL);
+    // If exec fails, print error and exit
+    fprintf(stderr, "[DEBUG] Child: execl failed! errno=%d\n", errno);
+    _exit(1);
+  } else if (pid > 0) {
+    // Parent - don't wait, let it run in background
+    fprintf(stderr, "[DEBUG] Parent: child spawned successfully\n");
+    return NS_OK;
   }
 
-#ifdef MOZ_WIDGET_GTK2
-  return nsGNOMERegistry::LoadURL(aURI);
-#else
-  return rv;
-#endif
+  // Fork failed
+  fprintf(stderr, "[DEBUG] Fork failed! errno=%d\n", errno);
+  return NS_ERROR_FAILURE;
 }
+// END AGPLv3 MODIFICATION
 
 NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& aScheme, nsAString& _retval)
 {

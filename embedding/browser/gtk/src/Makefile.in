@@ -102,10 +102,14 @@ EXTRA_DEPS	+= \
 	$(NULL)
 endif
 
+# BEGIN AGPLv3 MODIFICATION - blubskye 2025
+# Added xpcomglue_s for debug build which needs NSGlue_Warning
 SHARED_LIBRARY_LIBS += \
 		$(DIST)/lib/libembed_base_s.$(LIB_SUFFIX) \
 		$(DIST)/lib/libprofdirserviceprovider_s.$(LIB_SUFFIX) \
+		$(DIST)/lib/libxpcomglue_s.$(LIB_SUFFIX) \
 		$(NULL)
+# END AGPLv3 MODIFICATION
 
 EXPORTS		= \
 		gtkmozembed.h \

@@ -618,14 +618,22 @@ NS_IMETHODIMP nsView::SetContentTransparency(PRBool aTransparent)
 // because in many simple common cases the widgets do end up in the
 // right order. We set each widget's z-index to the z-index of the
 // nearest ancestor that has non-auto z-index.
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Added null checks for aView and widget to prevent segfault on modern systems
+// This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
 static void UpdateNativeWidgetZIndexes(nsView* aView, PRInt32 aZIndex)
 {
+  if (!aView) {
+    return;
+  }
   if (aView->HasWidget()) {
     nsIWidget* widget = aView->GetWidget();
-    PRInt32 curZ;
-    widget->GetZIndex(&curZ);
-    if (curZ != aZIndex) {
-      widget->SetZIndex(aZIndex);
+    if (widget) {
+      PRInt32 curZ;
+      widget->GetZIndex(&curZ);
+      if (curZ != aZIndex) {
+        widget->SetZIndex(aZIndex);
+      }
     }
   } else {
     for (nsView* v = aView->GetFirstChild(); v; v = v->GetNextSibling()) {
@@ -635,6 +643,7 @@ static void UpdateNativeWidgetZIndexes(nsView* aView, PRInt32 aZIndex)
     }
   }
 }
+// END AGPLv3 MODIFICATION
 
 static PRInt32 FindNonAutoZIndex(nsView* aView)
 {
@@ -699,17 +708,23 @@ nsresult nsIView::CreateWidget(const nsIID &aWindowIID,
           GetParent()->GetViewManager() != mViewManager)
           initData.mListenForResizes = PR_TRUE;
 
+        // BEGIN AGPLv3 MODIFICATION - blubskye 2025
+        // Added null check for parentWidget before dereferencing
+        // This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
         nsPoint offset(0, 0);
         nsIWidget* parentWidget = GetParent() ? GetParent()->GetNearestWidget(&offset)
           : nsnull;
         trect += offset;
         if (aWidgetInitData->mWindowType == eWindowType_popup) {
-          mWindow->Create(parentWidget->GetNativeData(NS_NATIVE_WIDGET), trect,
+          nsNativeWidget nativeParent = parentWidget ?
+            parentWidget->GetNativeData(NS_NATIVE_WIDGET) : nsnull;
+          mWindow->Create(nativeParent, trect,
                           ::HandleEvent, dx, nsnull, nsnull, aWidgetInitData);
         } else {
           mWindow->Create(parentWidget, trect,
                           ::HandleEvent, dx, nsnull, nsnull, aWidgetInitData);
         }
+        // END AGPLv3 MODIFICATION
       }
       if (aEnableDragDrop) {
         mWindow->EnableDragDrop(PR_TRUE);

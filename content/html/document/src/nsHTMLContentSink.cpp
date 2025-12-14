@@ -1630,12 +1630,16 @@ SinkContext::AddProcessingInstruction(const nsIParserNode& aNode)
 
       DidAddContent(node, PR_FALSE);
 
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Removed broken debug block referencing undefined mPreAppend
+// Original code was dead code that never compiled in DEBUG+MOZ_STANDALONE_COMPOSER mode
 #ifdef DEBUG
-      if (mPreAppend &&
-          SINK_LOG_TEST(gSinkLogModuleInfo, SINK_ALWAYS_REFLOW)) {
+      // Force reflow in debug mode if logging is enabled
+      if (SINK_LOG_TEST(gSinkLogModuleInfo, SINK_ALWAYS_REFLOW)) {
         mSink->ForceReflow();
       }
 #endif /* DEBUG */
+// END AGPLv3 MODIFICATION
       return rv;
     }
   }

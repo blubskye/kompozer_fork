@@ -48,6 +48,14 @@
 #include <glib.h>
 #include <glib-object.h>
 
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Added for fork/exec to launch xdg-open with clean environment
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
+// END AGPLv3 MODIFICATION
+
 static PRLibrary *gconfLib;
 static PRLibrary *gnomeLib;
 static PRLibrary *vfsLib;
@@ -234,22 +242,51 @@ nsGNOMERegistry::HandlerExists(const char *aProtocolScheme)
   return PR_FALSE;
 }
 
+// BEGIN AGPLv3 MODIFICATION - blubskye 2025
+// Use env to launch xdg-open with clean LD_LIBRARY_PATH
+// This prevents library conflicts when launching modern browsers from KompoZer
+// This modification is licensed under AGPLv3 - see LICENSE-AGPL-3.0
 /* static */ nsresult
 nsGNOMERegistry::LoadURL(nsIURI *aURL)
 {
-  if (!gconfLib)
-    return NS_ERROR_FAILURE;
-
   nsCAutoString spec;
   aURL->GetAsciiSpec(spec);
 
-  // XXX what if gnome_url_show() uses the default handler and that's us?
+  fprintf(stderr, "[DEBUG nsGNOMERegistry::LoadURL] Called with URL: %s\n", spec.get());
+  fprintf(stderr, "[DEBUG] Current LD_LIBRARY_PATH: %s\n", getenv("LD_LIBRARY_PATH") ? getenv("LD_LIBRARY_PATH") : "(null)");
 
-  if (_gnome_url_show(spec.get(), NULL))
+  // Use env -u to explicitly clear LD_LIBRARY_PATH before running xdg-open
+  // This prevents KompoZer's bundled libraries from conflicting with
+  // the external browser (e.g., Firefox needs system NSS, not KompoZer's)
+  pid_t pid = fork();
+  fprintf(stderr, "[DEBUG] fork() returned: %d\n", (int)pid);
+  if (pid == 0) {
+    // Child process - use env to clear library paths then exec xdg-open
+    // Using execl with /usr/bin/env ensures the environment is truly clean
+    fprintf(stderr, "[DEBUG] Child: about to exec env -u ... xdg-open %s\n", spec.get());
+    execl("/usr/bin/env", "env",
+          "-u", "LD_LIBRARY_PATH",
+          "-u", "MOZILLA_FIVE_HOME",
+          "-u", "LD_PRELOAD",
+          "xdg-open", spec.get(), (char *)NULL);
+    fprintf(stderr, "[DEBUG] Child: execl failed! errno=%d\n", errno);
+    _exit(1);  // If exec fails
+  } else if (pid > 0) {
+    // Parent - don't wait, let it run in background
+    fprintf(stderr, "[DEBUG] Parent: child spawned successfully, returning NS_OK\n");
+    return NS_OK;
+  }
+
+  // Fork failed, fall back to gnome_url_show (but clear env first)
+  fprintf(stderr, "[DEBUG] Fork failed, trying gnome_url_show fallback\n");
+  unsetenv("LD_LIBRARY_PATH");
+  unsetenv("MOZILLA_FIVE_HOME");
+  if (gconfLib && _gnome_url_show(spec.get(), NULL))
     return NS_OK;
 
   return NS_ERROR_FAILURE;
 }
+// END AGPLv3 MODIFICATION
 
 /* static */ void
 nsGNOMERegistry::GetAppDescForScheme(const nsACString& aScheme,
