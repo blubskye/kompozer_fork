@@ -1,0 +1,5 @@
+Cosmetic change on John Hayward's work:
+all modifications to the Mozilla core should use #ifdef MOZ_STANDALONE_COMPOSER
+--Cette ligne, et les suivantes ci-dessous, seront ignorées--
+
+M    src/nsHTMLTokens.cpp

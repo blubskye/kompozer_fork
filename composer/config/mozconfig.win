@@ -1,0 +1,43 @@
+# Build configuration script for Win32
+# 
+# For detailed build instructions, see:
+#   https://developer.mozilla.org/en/Build_Documentation
+#   https://developer.mozilla.org/en/Windows_Build_Prerequisites
+#   https://developer.mozilla.org/en/Windows_Build_Prerequisites_on_the_1.7_and_1.8_Branches
+
+# Mandatory if you use VC7 (might not be true any more with Gecko 1.8.1)
+# edit these lines according to your directory settings
+#GLIB_PREFIX=c:/mozilla/moztools_vc7
+#LIBIDL_PREFIX=c:/mozilla/moztools_vc7
+GLIB_PREFIX=/cygdrive/c/mozilla/moztools_vc7
+LIBIDL_PREFIX=/cygdrive/c/mozilla/moztools_vc7
+
+# Build the standalone composer, obviously
+ac_add_options --enable-application=composer
+
+# Uncomment and edit this line if you want to build outside of the source tree
+#mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obj-@CONFIG_GUESS@
+
+# Uncomment the following lines for an optimized build
+#ac_add_options --disable-debug
+#ac_add_options --enable-optimize
+ac_add_options --disable-tests
+
+# Required
+ac_add_options --enable-xpfe-components
+ac_add_options --enable-extensions="default spellcheck"
+ac_add_options --enable-necko-protocols=http,ftp,file,jar,viewsource,res,data
+ac_add_options --disable-installer
+
+# Win32 specific
+ac_add_options --disable-activex
+ac_add_options --disable-activex-scripting
+ac_add_options --disable-vista-sdk-requirements
+
+# Generic options - should be common to all KompoZer builds
+ac_add_options --enable-mathml
+ac_add_options --enable-svg
+ac_add_options --enable-canvas
+ac_add_options --enable-single-profile
+ac_add_options --disable-profilesharing
+

@@ -1,0 +1,30 @@
+# Build output
+obj-*/
+dist/
+*.o
+*.obj
+*.pyc
+*.pyo
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.orig
+
+# Mozilla build artifacts
+.mozconfig.out
+.mozconfig.mk
+
+# Keep .claude directory for project settings
+!.claude/

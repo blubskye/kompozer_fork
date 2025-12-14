@@ -1,0 +1,1520 @@
+Index: editor.xul
+===================================================================
+--- editor.xul	(révision 192)
++++ editor.xul	(révision 193)
+@@ -133,7 +133,7 @@
+           <editor type="content" id="content-source" context="editorSourceContext" flex="1"/>
+         </vbox>
+       </deck>
+-      <!-- HTML source browser/editor -->
++      <!-- HTML source browser/editor
+       <splitter id="browser-splitter" class="chromeclass-extrachrome" hidden="true"
+                 resizebefore="farthest"
+                 resizeafter="closest"
+@@ -143,16 +143,16 @@
+             style="min-height: 7em;"
+             collapsed="true">
+         <editor id="SourceBrowser" flex="1" src="about:blank"
+-                 type="content"
+-                 editortype="html"
+-                 onclick="onClickSourceDock(event);"
+-                 context="editorSourceContext"/>
++                type="content"
++                editortype="html"
++                onclick="onClickSourceDock(event);"
++                context="editorSourceContext"/> -->
+         <!--
+            -<browser id="SourceBrowser" flex="1" disablehistory="true" src="about:blank"
+            -         onclick="onClickSourceDock(event);"
+            -->
+         <!-- a textbox will be dynamically created here when necessary -->
+-      </deck>
++      <!--</deck>-->
+       <!-- View/Edit mode toolbar -->
+       <hbox id="EditModeToolbar" align="center" hidden="false" persist="collapsed">
+         <tabs id="EditModeTabs" flex="0">
+@@ -167,19 +167,6 @@
+                tooltiptext="&HTMLSourceMode.tooltip;" dir="&SourceTabDirection;"/>
+         </tabs>
+         <spacer flex="1"/>
+-        <!--
+-           -<tabs id="DisplayModeTabs" class="tabs-bottom" flex="0">
+-           -  <tab id="PreviewModeButton"  class="tab-bottom edit-mode _plain" type="text" selected="0"
+-           -       label="&PreviewMode.label;"    oncommand="goDoCommand('cmd_PreviewMode');"
+-           -       tooltiptext="&PreviewMode.tooltip;"/>
+-           -  <tab id="NormalModeButton"   class="tab-bottom edit-mode _plain" type="text" selected="1"
+-           -       label="&NormalModeTab.label;"  oncommand="goDoCommand('cmd_NormalMode');"
+-           -       tooltiptext="&NormalMode.tooltip;"/>
+-           -  <tab id="TagModeButton"      class="tab-bottom edit-mode _plain" type="text" selected="0"
+-           -       label="&AllTagsMode.label;"    oncommand="goDoCommand('cmd_AllTagsMode');"
+-           -       tooltiptext="&AllTagsMode.tooltip;"/>
+-           -</tabs>
+-           -->
+         <menulist id="DisplayModeTabs" class="tabs-bottom" flex="0">
+           <menupopup>
+             <menuitem id="PreviewModeButton"  class="tab-bottom edit-mode _plain" type="text" selected="0"
+Index: bindings/tabeditor.xml
+===================================================================
+--- bindings/tabeditor.xml	(révision 192)
++++ bindings/tabeditor.xml	(révision 193)
+@@ -57,7 +57,7 @@
+     <content>
+       <xul:stringbundle src="chrome://editor/locale/tabeditor.properties"/>
+       <xul:tabbox anonid="EditorTabbox" flex="1" onselect="this.parentNode.setFocus();">
+-        <xul:hbox class="tabbrowser-strip chromeclass-toolbar" context="_child">
++        <xul:hbox class="tabbrowser-strip chromeclass-toolbar" minheight="30" context="_child">
+ 
+           <xul:menupopup>
+             <xul:menuitem label="&newTab.label;" accesskey="&newTab.accesskey;" command="cmd_newEditorTab"/>
+@@ -107,6 +107,7 @@
+               <xul:tabpanels anonid="EditorTabpanels" selectedIndex="0">
+                 <xul:editor id="content-frame"
+                             type="content-primary"
++                            style="min-height: 5em;"
+                             editortype="html"
+                             context="editorContentContext"
+                             flex="1" tooltip="aHTMLTooltip"/>
+@@ -114,12 +115,33 @@
+             </xul:row>
+           </xul:rows>
+         </xul:grid>
+-        <!--
+-           -<xul:splitter anonid="EditorSplitter"
+-           -              resizebefore="closest"
+-           -              state="open"
+-           -              collapse="before"/>
+-           -->
++
++        <!-- SourceDeck (KompoZer 0.8+) -->
++        <xul:splitter anonid="EditorSplitter"
++                      resizebefore="closest"
++                      state="open"
++                      collapse="before"/>
++        <xul:deck anonid="SourceDeck"
++                  flex="1"
++                  selectedIndex="0"
++                  style="max-height: 0;">
++          <xul:editor anonid="SourceEditor"
++                      flex="1"
++                      src="about:blank"
++                      type="content"
++                      editortype="html"
++                      onclick="onClickSourceDock(event);"
++                      context="editorSourceContext"/>
++          <xul:browser anonid="SourceBrowser"
++                       flex="1"
++                       disablehistory="true"
++                       src="about:blank"
++                       onclick="onClickSourceDock(event);"
++                       context="editorSourceContext"/>
++          <!-- Modal mode: a textbox will be created here dynamically -->
++        </xul:deck>
++        <!-- /SourceDeck -->
++
+       </xul:tabbox>
+     </content>
+ 
+@@ -128,6 +150,7 @@
+         <![CDATA[
+           ShowRulers(!(this.getAttribute("collapserulers") == "true"));
+           document.addEventListener("keypress", this._keyEventHandler, false);
++          this.setEditMode(1); // XXX Kaze: ugly hack to init mSourceEditor
+         ]]>
+       </constructor>
+ 
+@@ -204,6 +227,23 @@
+         </getter>
+       </property>
+ 
++      <!-- SourceDeck -->
++      <property name="mSourceDeck">
++        <getter>
++        <![CDATA[
++          return document.getAnonymousElementByAttribute(this, "anonid", "SourceDeck");
++        ]]>
++        </getter>
++      </property>
++
++      <property name="mSourceEditor">
++        <getter>
++        <![CDATA[
++          return document.getAnonymousElementByAttribute(this, "anonid", "SourceEditor");
++        ]]>
++        </getter>
++      </property>
++
+       <property name="mEditorSplitter">
+         <getter>
+         <![CDATA[
+@@ -211,6 +251,7 @@
+         ]]>
+         </getter>
+       </property>
++      <!-- /SourceDeck -->
+ 
+       <property name="mEditorGrid">
+         <getter>
+@@ -317,36 +358,39 @@
+       </method>
+ 
+       <!-- Kaze: trying to collapse/expand the main <editor> -->
+-      <method name="ShowEditor">
+-        <parameter name="show" />
++      <method name="setEditMode">
++        <parameter name="mode" />
+         <body>
+         <![CDATA[
+-          if (show)
+-          {
+-            // this.mEditorSplitter.setAttribute("state", "open");
+-            // this.mEditorSplitter.setAttribute("hidden", "false");
+-            // this.mEditorSplitter.previousSibling.setAttribute("collapsed", "false");
+-            this.mEditorSplitter.previousSibling.collapsed = false;
+-            this.mEditorSplitter.previousSibling.flex = 1;
++          // if we hide mSourceDeck, the <editor> component isn't initialized
++          // so we use this ugly "max-height: 0;" instead...
++          switch(mode) {
++            case 0: // design mode
++              this.mEditorSplitter.setAttribute("state", "expand");
++              this.mEditorSplitter.hidden = true;
++              this.mEditorGrid.collapsed = false;
++              // this.mSourceDeck.hidden = true;
++              this.mSourceDeck.setAttribute("style", "max-height: 0;");
++              break;
++            case 1: // split mode
++              this.mEditorSplitter.setAttribute("state", "expand");
++              this.mEditorSplitter.hidden = false;
++              this.mEditorGrid.collapsed = false;
++              // this.mSourceDeck.hidden = false;
++              this.mSourceDeck.setAttribute("style", "min-height: 5em;");
++              break;
++            case 2: // source mode
++              this.mEditorSplitter.setAttribute("state", "collapsed");
++              this.mEditorSplitter.hidden = true;
++              this.mEditorGrid.collapsed = true;
++              // this.mSourceDeck.hidden = false;
++              this.mSourceDeck.setAttribute("style", "border: 1px solid grey;");
++              break;
+           }
+-          else
+-          {
+-            // this.mEditorSplitter.setAttribute("state", "collapsed");
+-            // this.mEditorSplitter.setAttribute("hidden", "true");
+-            // this.mEditorSplitter.previousSibling.setAttribute("collapsed", "true");
+-            this.mEditorSplitter.previousSibling.collapsed = true;
+-            this.mEditorSplitter.previousSibling.flex = 0;
+-          }
+         ]]>
+         </body>
+       </method>
+ 
+-      <!--
+-         -<property name="collapsed"
+-         -          onget="return this.getAttribute('editortype');"
+-         -          onset="this.setAttribute('editortype', val); return val;"/>
+-         -->
+- 
+       <method name="showCurrentTabAsModified">
+         <parameter name="val" />
+         <body>
+@@ -781,12 +825,16 @@
+         <parameter name="strictness" />
+         <body>
+           <![CDATA[
++            /* Kaze: using chrome-registered templates instead of about:whatever
+             if (type == "xhtml")
+               return this.editURL(strictness ? "about:xstrictblank" : "about:xblank",
+                                   true, false, false);
+ 
+             return this.editURL(strictness ? "about:strictblank" : "about:blank",
+                                 true, false, false);
++            */
++            var url = "chrome://editor/content/blanks/" + (strictness ? "strict." : "transitional.") + type;
++            return this.editURL(url, true, false, false);
+           ]]>
+         </body>
+       </method>
+Index: editorUtilities.js
+===================================================================
+--- editorUtilities.js	(révision 192)
++++ editorUtilities.js	(révision 193)
+@@ -138,20 +138,20 @@
+       aMimeType = "text/plain";
+     // XXX ugly hack for HTML fragments
+     if (this.IsHtmlFragment()) {
+-			gHelpers.Write(url, GetBodyElement().innerHTML);
+-			GetCurrentEditor().resetModificationCount();
+-		}
+-		else { // Save the document (Composer function)
+-			var result = SaveDocument(aSaveAs, aSaveCopy, aMimeType);
+-			if (!result)
+-				return;
++      gHelpers.Write(url, GetBodyElement().innerHTML);
++      GetCurrentEditor().resetModificationCount();
+     }
++    else { // Save the document (Composer function)
++      var result = SaveDocument(aSaveAs, aSaveCopy, aMimeType);
++      if (!result)
++        return;
++    }
+     // update URL if saved under a different name/location
+     if (aSaveAs) {
+       var index = this.getIndex(url);
+       url = GetDocumentUrl(); // = new url
+       this.urls[index] = url;
+-			UpdateWindowTitle();
++      UpdateWindowTitle();
+     }
+     // store modification date
+     this.store(unescape(url));
+@@ -475,7 +475,7 @@
+   //return (gEditorDisplayMode == kDisplayModeSource);
+   //return (gEditorEditMode == kEditModeSource);
+   //return (gTabEditor.IsTextDocument() || (gEditorEditMode == kEditModeSource));
+-	return (gEditorEditMode >= kEditModeSource);
++  return (gEditorEditMode >= kEditModeSource);
+ }
+ 
+ // are we editing HTML (i.e. neither in HTML source mode, nor editing a text file)
+@@ -515,6 +515,10 @@
+ 
+ function IsHTMLSourceChanged()
+ {
++  if (gSourceTextEditor.documentModified)
++    dump("HTML source has been modified.\n");
++  else
++    dump("HTML source has NOT been modified.\n");
+   return gSourceTextEditor.documentModified;
+ }
+ 
+@@ -829,8 +833,11 @@
+ 
+ function IsUrlAboutBlank(urlString)
+ {
+-  return (urlString == "about:blank" || urlString == "about:xblank" ||
+-          urlString == "about:strictblank" || urlString == "about:xstrictblank");
++  /*
++   *return (urlString == "about:blank" || urlString == "about:xblank" ||
++   *        urlString == "about:strictblank" || urlString == "about:xstrictblank");
++   */
++  return /^about:|^chrome:\/\//.test(urlString);
+ }
+ 
+ //~ function MakeRelativeUrl(url)
+Index: editor.js
+===================================================================
+--- editor.js	(révision 192)
++++ editor.js	(révision 193)
+@@ -78,7 +78,7 @@
+ const nsIWebNavigation = Components.interfaces.nsIWebNavigation;
+ 
+ // Kaze: added kColoredSourceView to enable Nvu's pseudo-syntax highlighting later
+-const kColoredSourceView = false;
++const kColoredSourceView = true;
+ 
+ // Kaze: stealing some code from Thunderbird for the inline spellchecker
+ //const mozISpellCheckingEngine = Components.interfaces.mozISpellCheckingEngine;
+@@ -300,10 +300,10 @@
+ function EditorOnLoad()
+ {
+   // See if argument was passed.
+-  if ( window.arguments && window.arguments[0] ) {
++  if (window.arguments && window.arguments[0]) {
+       // Opened via window.openDialog with URL as argument.
+       // Put argument where EditorStartup expects it.
+-      document.getElementById( "args" ).setAttribute( "value", window.arguments[0] );
++      document.getElementById("args").setAttribute("value", window.arguments[0] );
+   }
+ 
+   // get default character set if provided
+@@ -331,20 +331,24 @@
+   EditorStartup();
+ 
+   // Initialize our source text <editor>
++  // Kaze: useless with KompoZer 0.8?
+   try {
+-    gSourceContentWindow = document.getElementById("content-source");
++    //gSourceContentWindow = document.getElementById("content-source");
++    gSourceContentWindow = document.getElementById("tabeditor").mSourceEditor;
+     gSourceContentWindow.makeEditable("text", false);
+-    gSourceTextEditor = gSourceContentWindow.getEditor(gSourceContentWindow.contentWindow);
+-
+-    gSourceTextEditor.QueryInterface(Components.interfaces.nsIPlaintextEditor);
+-    gSourceTextEditor.enableUndo(false);
+-    gSourceTextEditor.rootElement.style.fontFamily = "-moz-fixed";
+-    gSourceTextEditor.rootElement.style.whiteSpace = "pre";
+-    gSourceTextEditor.rootElement.style.margin = 0;
+-    if (kColoredSourceView) {
+-      gSourceTextEditor.rootElement.style.backgroundColor = "#f0f0f0";
+-      gSourceTextEditor.rootElement.setAttribute("_moz_sourceview", "true");
+-    }
++    gSourceTextEditor = newSourceTextEditor();
++    /*
++     *gSourceTextEditor = gSourceContentWindow.getEditor(gSourceContentWindow.contentWindow);
++     *gSourceTextEditor.QueryInterface(Components.interfaces.nsIPlaintextEditor);
++     *gSourceTextEditor.enableUndo(false);
++     *gSourceTextEditor.rootElement.style.fontFamily = "-moz-fixed";
++     *gSourceTextEditor.rootElement.style.whiteSpace = "pre";
++     *gSourceTextEditor.rootElement.style.margin = 0;
++     *if (kColoredSourceView) {
++     *  gSourceTextEditor.rootElement.style.backgroundColor = "#f0f0f0";
++     *  gSourceTextEditor.rootElement.setAttribute("_moz_sourceview", "true");
++     *}
++     */
+     var controller = Components.classes["@mozilla.org/embedcomp/base-command-controller;1"]
+                                .createInstance(Components.interfaces.nsIControllerContext);
+     controller.init(null);
+@@ -359,7 +363,7 @@
+   } catch (e) { dump("makeEditable failed: "+e+"\n"); }
+ 
+   // don't wait if the sidebar is hidden...
+-  if ( document.getElementById("sidebar-box").getAttribute("collapsed") )
++  if (document.getElementById("sidebar-box").getAttribute("collapsed"))
+     OnSidebarLoad();
+ }
+ 
+@@ -669,8 +673,8 @@
+   if (is_HTMLEditor)
+   {
+     // XUL elements we use when switching from normal editor to edit source
+-    gContentWindowDeck  = document.getElementById("ContentWindowDeck");
+-    gSourceBrowserDeck  = document.getElementById("SourceBrowserDeck");
++    //gContentWindowDeck  = document.getElementById("ContentWindowDeck");
++    gSourceBrowserDeck  = document.getElementById("tabeditor").mSourceDeck; // used in viewSource.js
+     gFormatToolbar1     = document.getElementById("FormatToolbar1");
+     gFormatToolbar2     = document.getElementById("FormatToolbar2");
+     gViewFormatToolbar1 = document.getElementById("viewFormatToolbar1");
+@@ -751,12 +755,20 @@
+     url = null;
+ 
+   // Kaze: if no URL is passed, use the default blank page (not in the core any more)
+-  if (!url || !url.length) try {
++  /* if (!url || !url.length) try {
+     url  = gPrefs.getCharPref("editor.default.doctype") == "xhtml" ? "about:x" : "about:";
+     url += gPrefs.getBoolPref("editor.default.strictness") ? "strictblank" : "blank";
+   } catch(e) {
+     // default is HTML 4.01 Strict if case the prefs aren't available for any reason
+     url = "about:strictblank";
++  */
++  if (!url || !url.length) try {
++    url = "chrome://editor/content/blanks/"
++        + (gPrefs.getBoolPref("editor.default.strictness") ? "strict." : "transitional.")
++        + gPrefs.getCharPref("editor.default.doctype");
++  } catch(e) {
++    // default is HTML 4.01 Strict if case the prefs aren't available for any reason
++    url = "chrome://editor/content/blanks/strict.html";
+   }
+ 
+   // go, go, go!
+@@ -1994,8 +2006,7 @@
+     editor.QueryInterface(nsIEditorStyleSheets);
+     editor instanceof Components.interfaces.nsIHTMLObjectResizer;
+ 
+-    switch (mode)
+-    {
++    switch (mode) {
+       case kDisplayModePreview:
+         // Disable all extra "edit mode" style sheets 
+         editor.enableStyleSheet(kNormalStyleSheet, false);
+@@ -2015,17 +2026,13 @@
+         editor.addOverrideStyleSheet(kAllTagsStyleSheet);
+         // don't allow resizing in AllTags mode because the visible tags
+         // change the computed size of images and tables...
+-        if (editor.resizedObject) {
++        if (editor.resizedObject)
+           editor.hideResizers();
+-        }
+         editor.isImageResizingEnabled = false;
+         break;
+     }
+   } catch(e) {}
+ 
+-  // update commands to disable or re-enable stuff
+-  //window.updateCommands("mode_switch");
+-
+   // Set the selected tab at bottom of window.
+   // (Note: Setting "selectedItem = mode" won't redraw tabs when menu is used)
+   document.getElementById("DisplayModeTabs").selectedItem = document.getElementById(kDisplayModeTabIDS[mode]);
+@@ -2044,18 +2051,25 @@
+     return;
+ 
+   var bodyElement = GetBodyElement();
+-  if (!bodyElement)
+-  {
++  if (!bodyElement) {
+     dump("SetEditMode: We don't have a body node!\n");
+     return;
+   }
+ 
+   // must have editor if here!
+-  var editor = GetCurrentEditor();
++  //var editor = GetCurrentEditor();
+ 
+   // Switch the UI mode before inserting contents
+   //   so user can't type in source window while new window is being filled
+   var previousMode = gEditorEditMode;
++
++  // KompoZer 0.8 rev>192
++  window.setCursor("wait");
++  SetEditUI(mode);
++  window.setCursor("auto");
++  return;
++
++  /* older versions (dead code)
+   if (!SetEditUI(mode))
+     return;
+ 
+@@ -2125,15 +2139,15 @@
+       NotifyProcessors(kProcessorsBeforeGettingSource, editor.document);
+ 
+       var mimeType = kHTMLMimeType;
+-      /*if (IsXHTMLDocument())
+-        mimeType = kXMLMimeType;*/
++      //if (IsXHTMLDocument())
++        //mimeType = kXMLMimeType;
+       var source = editor.outputToString(mimeType, flags);
+       var start = source.search(/\<span class='/i);
+       if (start == -1) start = 0;
+       gSourceTextEditor.selectAll();
+       // gSourceTextEditor.insertText(source.slice(start));
+ 
+-      if (false /*IsXHTMLDocument()*/)
++      if (false) // IsXHTMLDocument()
+       {
+         source = source.replace( /\n$/gi , String(""));
+         source = source.slice(start).replace( /\n/gi , String("</li><li>"));
+@@ -2201,71 +2215,11 @@
+   }
+   else if (previousMode == kEditModeSource)
+   {
+-
+-    // Only rebuild document if a change was made in source window
+-    if (IsHTMLSourceChanged())
+-    {
+-      // Reduce the undo count so we don't use too much memory
+-      //   during multiple uses of source window 
+-      //   (reinserting entire doc caches all nodes)
+-      try {
+-        editor.transactionManager.maxTransactionCount = 1;
+-      } catch (e) {}
+-
+-      editor.beginTransaction();
+-      try {
+-        // We are coming from edit source mode,
+-        //   so transfer that back into the document
+-        var flags = 1024; // nsIDocumentEncoder::OutputLFLineBreak 
+-        flags |= 524288;  // nsIDocumentEncoder::OutputLineBreaksWhenClosingLI
+-        source = gSourceTextEditor.outputToString(kTextMimeType, flags);
+-        editor.rebuildDocumentFromSource(source);
+-
+-        // Get the text for the <title> from the newly-parsed document
+-        // (must do this for proper conversion of "escaped" characters)
+-        var title = "";
+-        var titlenodelist = editor.document.getElementsByTagName("title");
+-        if (titlenodelist)
+-        {
+-          var titleNode = titlenodelist.item(0);
+-          if (titleNode && titleNode.firstChild && titleNode.firstChild.data)
+-            title = titleNode.firstChild.data;
+-          // XXX HACK glazou
+-          if (title == "\n")
+-            title = "";
+-          // XXX Hack Kaze
+-          title = title.replace(/^[\s]*/, '').replace(/[\s]*$/, '');
+-        }
+-        if (editor.document.title != title)
+-          SetDocumentTitle(title);
+-
+-      } catch (ex) {
+-        dump(ex);
+-      }
+-      editor.endTransaction();
+-
+-      // Restore unlimited undo count
+-      try {
+-        editor.transactionManager.maxTransactionCount = -1;
+-      } catch (e) {}
+-    }
+-
+-    NotifyProcessors(kProcessorsBeforeBackToNormal, editor.document);
+-
+-    // Clear out the string buffers
+-    gSourceContentWindow.commandManager.removeCommandObserver(gSourceTextObserver, "cmd_undo");
+-    gSourceTextEditor.removeDocumentStateListener(gSourceTextListener);
+-    gSourceTextEditor.enableUndo(false);
+-    if (!kColoredSourceView) { // Composer
+-      gSourceTextEditor.selectAll();
+-      gSourceTextEditor.deleteSelection(gSourceTextEditor.eNone);
+-    }
+-    gSourceTextEditor.resetModificationCount();
+-
+-    gContentWindow.focus();
++    rebuildDocumentFromSource();
+   }
+ 
+   window.setCursor("auto");
++  */ 
+ }
+ 
+ function SetEditUI(mode)
+@@ -2277,11 +2231,12 @@
+   //  return false to indicate we didn't switch
+   if (mode == gEditorEditMode)
+     return false;
+-  dump("switching to mode " + mode + "\n");
++  dump("switching to Edit mode #" + mode + "\n");
+ 
+   GetCurrentEditorElement().setAttribute("editmode", mode);
+ 
+-  // XXX
++  /* XXX this notifiers probably doesn't trigger anything
++  */
+   //NotifyProcessors(kProcessorsWhenDisplayModeChanges, mode);
+   if (mode == kEditModeText)
+     NotifyProcessors(kProcessorsWhenDisplayModeChanges, kEditModeSource);
+@@ -2292,39 +2247,28 @@
+   gEditorEditMode = mode;
+ 
+   // show|hide display|edit mode selectors
+-  document.getElementById("EditModeToolbar").hidden = (mode == kEditModeText);
+-  var hiddenElementIDs = [
+-    "DisplayModeTabs",
+-    "viewNormalMode", "viewAllTagsMode", "viewPreviewMode",
+-    "editDesignMode", "editSplitMode", "editSourceMode",
+-    "viewSep1", "viewSep2", "viewSep3",
+-    "blockOutlines",
+-    "structSpacer"
+-  ];
+-  for (var i = 0; i < hiddenElementIDs.length; i++)
+-    document.getElementById(hiddenElementIDs[i]).hidden = (mode >= kEditModeSource);
++  /*
++   *document.getElementById("EditModeToolbar").hidden = (mode == kEditModeText);
++   *var hiddenElementIDs = [
++   *  "DisplayModeTabs",
++   *  "viewNormalMode", "viewAllTagsMode", "viewPreviewMode",
++   *  "editDesignMode", "editSplitMode", "editSourceMode",
++   *  "viewSep1", "viewSep2", "viewSep3",
++   *  "blockOutlines",
++   *  "structSpacer"
++   *];
++   *for (var i = 0; i < hiddenElementIDs.length; i++)
++   *  document.getElementById(hiddenElementIDs[i]).hidden = (mode >= kEditModeSource);
++   */
+ 
+   // show|hide source deck and splitter
+-  var splitter = document.getElementById("browser-splitter");
+-  if (mode == kEditModeSplit) {
+-    gSourceBrowserDeck.removeAttribute("collapsed");
+-    splitter.setAttribute("state", "expand");
+-    splitter.setAttribute("hidden", "false");
+-    // display the current node's source
++  var tabeditor = document.getElementById("tabeditor");
++  tabeditor.setEditMode(mode);
++  if (mode == kEditModeSplit)
+     viewNodeSource(gLastFocusNode);
+-  }
+-  else {
+-    gSourceBrowserDeck.setAttribute("collapsed", "true");
+-    splitter.setAttribute("state", "collapsed");
+-    splitter.setAttribute("hidden", "true");
+-  }
++  else if (mode == kEditModeSource)
++    viewDocumentSource();
+ 
+-  // show|hide rulers
+-  document.getElementById("hRuler").hidden        = (mode == kEditModeText);
+-  document.getElementById("vRuler").collapsed     = (mode == kEditModeText);
+-  document.getElementById("viewRulers").hidden    = (mode == kEditModeText);
+-  document.getElementById("viewSepRulers").hidden = (mode == kEditModeText);
+-
+   ResetStructToolbar();
+ 
+   // enable|disable inline spell checking and format toolbars
+@@ -2349,17 +2293,19 @@
+     gPreviousNonSourceEditMode = mode;
+   }
+ 
+-  // toggle from/to sourceWindow
+-  if (mode == kEditModeSource) {      // Switch to the sourceWindow (second in the deck)
+-    gContentWindowDeck.selectedIndex = 1;
+-    gSourceContentWindow.contentWindow.focus();
+-  } else {                            // Switch to the normal editor (first in the deck)
+-    gContentWindowDeck.selectedIndex = 0;
+-    gContentWindow.focus();
+-  }
++  /* toggle from/to sourceWindow
++    if (mode == kEditModeSource) {      // Switch to the sourceWindow (second in the deck)
++      gContentWindowDeck.selectedIndex = 1;
++      gSourceContentWindow.contentWindow.focus();
++    } else {                            // Switch to the normal editor (first in the deck)
++      gContentWindowDeck.selectedIndex = 0;
++      gContentWindow.focus();
++    }
++  */
+ 
+   // update commands to disable or re-enable stuff
+-  window.updateCommands("mode_switch");
++  // XXX this disables a lot of commands when clicking in the source editor. WTF?
++  //window.updateCommands("mode_switch");
+ 
+   // update mode selector widgets
+   if (mode != kEditModeText) {
+@@ -2375,6 +2321,7 @@
+   return true;
+ }
+ 
++/* Kaze: these functions have been moved to viewSource.js
+ function CancelHTMLSource()
+ {
+   // Don't convert source text back into the DOM document
+@@ -2416,6 +2363,7 @@
+   // Switch edit modes -- converts source back into DOM document
+   SetEditMode(gPreviousNonSourceEditMode);
+ }
++ */
+ 
+ function EditorToggleStyleSheet(ref)
+ {
+@@ -3252,6 +3200,7 @@
+ 
+ function HideUIElementsForPlainTextEditor()
+ {
++  // Kaze
+   // this chunk has been taken from 'gEditorDocumentObserver':
+   // it's useless with KompoZer but useful for SeaMonkey Composer...
+ 
+@@ -3309,6 +3258,7 @@
+ 
+ function HideUIElementsForPlainTextMode()
+ {
++  // Kaze
+   // similar to HideUIElementsForPlainTextEditor()
+   // but used to display some text in an HTML editor (syntax highlighting...)
+ 
+@@ -3366,6 +3316,7 @@
+ 
+ function HideUIElementsForFragmentMode()
+ {
++  // Kaze
+   var fragmentMode = gTabEditor.IsTextDocument();
+ 
+   var fragmentModeElements = [
+@@ -4457,39 +4408,6 @@
+   UpdateRulers(element);
+ }
+ 
+-function InsertColoredSourceView(editor, source)
+-{
+-  var sourceDoc = editor.document;
+-  // clean source view first
+-  var bodySourceDoc = sourceDoc.documentElement.firstChild.nextSibling;
+-  while (bodySourceDoc.lastChild)
+-    bodySourceDoc.removeChild(bodySourceDoc.lastChild);
+-
+-  // the following is ugly but working VERY well
+-  var styleElt = sourceDoc.getElementById("moz_sourceview_css");
+-  if (!styleElt)
+-  {
+-    var heads = sourceDoc.getElementsByTagName("head");
+-    var headElement;
+-    if (!heads)
+-    {
+-      headElement = sourceDoc.createElement("head");
+-      bodySourceDoc.parentNode.insertBefore(headElement, bodySourceDoc);
+-    }
+-    else
+-      headElement = heads.item(0);
+-    var styleElt = sourceDoc.createElement("style");
+-    styleElt.setAttribute("id", "moz_sourceview_css");
+-    styleElt.setAttribute("type", "text/css");
+-    var sheet = sourceDoc.createTextNode('@import url("resource://gre/res/viewsource.css");' +
+-                                         'ol { margin: 0; margin-left:2em; }' +
+-                                         'li { *padding-left: 1em; background-color: white; }');
+-    styleElt.appendChild(sheet);
+-    headElement.appendChild(styleElt);
+-  }
+-  bodySourceDoc.innerHTML = source;
+-}
+-
+ /* PINGER */
+ 
+ function StreamListener(channel, url)
+Index: newDocument.js
+===================================================================
+--- newDocument.js	(révision 192)
++++ newDocument.js	(révision 193)
+@@ -148,11 +148,19 @@
+                                                                        dialog.dtdStrictnessCheckbox.checked);
+       }
+       else
+-        window.opener.delayedOpenWindow("chrome://editor/content", "chrome,all,dialog=no",
+-                                        dialog.xhtmlCheckbox.checked ? ( dialog.dtdStrictnessCheckbox.checked ? "about:xstrictblank"
+-                                                                                                              : "about:xblank" )
+-                                                                     : ( dialog.dtdStrictnessCheckbox.checked ? "about:strictblank"
+-                                                                                                              : "about:blank" ));
++      {
++        /*
++         *window.opener.delayedOpenWindow("chrome://editor/content", "chrome,all,dialog=no",
++         *                                dialog.xhtmlCheckbox.checked ? ( dialog.dtdStrictnessCheckbox.checked ? "about:xstrictblank"
++         *                                                                                                      : "about:xblank" )
++         *                                                             : ( dialog.dtdStrictnessCheckbox.checked ? "about:strictblank"
++         *                                                                                                      : "about:blank" ));
++         */
++        var url = "chrome://editor/content/blanks/"
++                + (dialog.dtdStrictnessCheckbox.checked ? "strict." : "transitional.")
++                + dialog.xhtmlCheckbox.checked ? "xhtml" : "html";
++        window.opener.delayedOpenWindow("chrome://editor/content", "chrome,all,dialog=no", url);
++      }
+       break;
+     case "blankTemplate":
+       if (openAppList == "newTab")
+Index: composer-sets.inc
+===================================================================
+--- composer-sets.inc	(révision 192)
++++ composer-sets.inc	(révision 193)
+@@ -358,6 +358,7 @@
+     <key id="key_textZoomEnlarge2" key="&textEnlarge.commandkey2;" command="cmd_textZoomEnlarge" modifiers="accel"/>
+     <key id="key_textZoomReduce"   key="&textReduce.commandkey;"   command="cmd_textZoomReduce"  modifiers="accel"/>
+     <key id="key_textZoomReset"    key="&textReset.commandkey;"    command="cmd_textZoomReset"   modifiers="accel"/>
++    <key id="key_editDocumentSrc"  keycode="VK_RETURN"             command="cmd_HTMLSourceMode"  modifiers="alt, shift"/>
+     <key id="key_editNodeToggle"   keycode="VK_RETURN"             command="cmd_editNodeToggle"  modifiers="alt"/>
+     <key id="key_editNodeCancel"   keycode="VK_ESCAPE"             command="cmd_editNodeCancel"/>
+     <!-- DOM navigation -->
+@@ -368,7 +369,7 @@
+     <key id="key_editNextSibling"  keycode="VK_DOWN"  command="cmd_editNextSibling" modifiers="alt"/>
+     <key id="key_editFirstChild"   keycode="VK_RIGHT" command="cmd_editFirstChild"  modifiers="alt"/>
+     <key id="key_extEditorCmd"     keycode="VK_F6"    command="cmd_extEditor"/>
+-    <key id="key_sourceDockToggle" keycode="VK_F8"/>
++    <!--<key id="key_sourceDockToggle" keycode="VK_F8"/>-->
+ #else
+     <!-- alt+arrow is used for word selection on MacOS X, using ctrl+arrow instead -->
+     <key id="key_editCurrentNode"  keycode="VK_BACK"  command="cmd_editCurrentNode" modifiers="control"/>
+Index: ComposerCommands.js
+===================================================================
+--- ComposerCommands.js	(révision 192)
++++ ComposerCommands.js	(révision 193)
+@@ -1267,13 +1267,13 @@
+   if (aWrapColumn > 0)
+     outputFlags |= webPersist.ENCODE_FLAGS_WRAP;
+ 
+-	// Kaze: if we're editing a fragment, save <body> content
+-	if (gTabEditor.IsHtmlFragment()) {
+-		// we can't use webPersist.ENCODE_FLAGS_BODY_ONLY, see bug #305711
+-		// so we select the document body and output the selection :-/
+-		//outputFlags |= webPersist.ENCODE_FLAGS_BODY_ONLY;
+-		outputFlags |= webPersist.ENCODE_FLAGS_SELECTION_ONLY;
+-	}
++  // Kaze: if we're editing a fragment, save <body> content
++  if (gTabEditor.IsHtmlFragment()) {
++    // we can't use webPersist.ENCODE_FLAGS_BODY_ONLY, see bug #305711
++    // so we select the document body and output the selection :-/
++    //outputFlags |= webPersist.ENCODE_FLAGS_BODY_ONLY;
++    outputFlags |= webPersist.ENCODE_FLAGS_SELECTION_ONLY;
++  }
+ 
+   return outputFlags;
+ }
+Index: viewSource.js
+===================================================================
+--- viewSource.js	(révision 192)
++++ viewSource.js	(révision 193)
+@@ -39,11 +39,11 @@
+ // reference to the currently viewed/edited node
+ var gViewedElement = null;
+ var gEditedElement = null;
+-var gSourceEditor  = null;
+-var gSourceEditorModified = false;
++//var gSourceEditor  = null;
++//var gSourceEditorModified = false;
+     
+ // source dock: modal editor (browser+textbox) or classic editor (htmlEditor)?
+-const kModalSourceDock = false;
++//const kModalSourceDock = false;
+ 
+ /*****************************************************************************\
+  *                                                                           *
+@@ -212,13 +212,13 @@
+ 
+   var button;
+   var firstIteration = true;                    // Kaze
+-	var isFragment = gTabEditor.IsHtmlFragment(); // Kaze
++  var isFragment = gTabEditor.IsHtmlFragment(); // Kaze
+   do {
+     tag = element.nodeName.toLowerCase();
+-		if (isFragment && (tag == "body"))
+-			break;
++    if (isFragment && (tag == "body"))
++      break;
+ 
+-		// create button
++    // create button
+     button = newStructToolbarButton(element, tag);
+     toolbar.insertBefore(button, toolbar.firstChild);
+     if (isFocusNode && oneElementSelected) {
+@@ -383,30 +383,203 @@
+  *                                                                           *
+ \*****************************************************************************/
+ 
+-function getBrowser() {
+-  return document.getElementById("SourceBrowser");
++function InsertColoredSourceView(editor, source)
++{
++  var sourceDoc = editor.document;
++  // clean source view first
++  var bodySourceDoc = sourceDoc.documentElement.firstChild.nextSibling;
++  while (bodySourceDoc.lastChild)
++    bodySourceDoc.removeChild(bodySourceDoc.lastChild);
++
++  // the following is ugly but working VERY well
++  var styleElt = sourceDoc.getElementById("moz_sourceview_css");
++  if (!styleElt)
++  {
++    var heads = sourceDoc.getElementsByTagName("head");
++    var headElement;
++    if (!heads)
++    {
++      headElement = sourceDoc.createElement("head");
++      bodySourceDoc.parentNode.insertBefore(headElement, bodySourceDoc);
++    }
++    else
++      headElement = heads.item(0);
++    var styleElt = sourceDoc.createElement("style");
++    styleElt.setAttribute("id", "moz_sourceview_css");
++    styleElt.setAttribute("type", "text/css");
++    var sheet = sourceDoc.createTextNode('@import url("resource://gre/res/viewsource.css");' +
++                                         'ol { margin: 0; margin-left:2em; }' +
++                                         'li { *padding-left: 1em; background-color: white; }');
++    styleElt.appendChild(sheet);
++    headElement.appendChild(styleElt);
++  }
++  bodySourceDoc.innerHTML = source;
+ }
+ 
+-function onViewSourceContextMenu() { // XXX useless with the non-modal source dock
+-  var tag = gViewedElement.tagName.toLowerCase();
+-  var node = (tag != "html" && tag != "head" && tag != "body") ? "false" : "true";
+-  var head = (tag == "html" || tag == "head") ? "false" : "true";
+-  var body = (tag == "body") ? "false" : "true";
+-  document.getElementById("vMenu_editHead").setAttribute("hidden", head);
+-  document.getElementById("vMenu_editBody").setAttribute("hidden", body);
+-  document.getElementById("vMenu_editNode").setAttribute("hidden", node);
++function viewDocumentSource() {
++  if (true) {
++    // lazy way
++    var htmlRoot = GetCurrentEditor().document.getElementsByTagName("html").item(0);
++    viewNodeSource(htmlRoot);
++    editNodeStart();
++    return;
+ 
+-  // wrap long lines?
+-  if (gPrefs) try {
+-    var wrap = gPrefs.getBoolPref("view_source.wrap_long_lines");
+-    if (wrap)
+-      document.getElementById('cMenu_wrapLongLines').setAttribute("checked", "true");
+-  } catch (ex) {}
++    // TODO: show line numbers + preserve selection + disable DOM Explorer
++    var tabeditor = document.getElementById("tabeditor");
++    //tabeditor.mSourceEditor.focus();
++    tabeditor.mSourceEditor.contentWindow.focus();
++    return;
++  }
++
++  // proper way
++  gSourceTextEditor = kColoredSourceView ? tabeditor.mSourceEditor
++                    : gSourceContentWindow.getEditor(gSourceContentWindow.contentWindow);;
++
++  // Display the DOCTYPE as a non-editable string above edit area
++  var domdoc;
++  try { domdoc = editor.document; } catch (e) { dump( e + "\n");}
++  if (domdoc)
++  {
++    var doctypeNode = document.getElementById("doctype-text");
++    var dt = domdoc.doctype;
++    if (doctypeNode)
++    {
++      if (dt)
++      {
++        doctypeNode.collapsed = false;
++        var doctypeText = "<!DOCTYPE " + domdoc.doctype.name;
++        if (dt.publicId)
++          doctypeText += " PUBLIC \"" + domdoc.doctype.publicId;
++        if (dt.systemId)
++          doctypeText += " "+"\"" + dt.systemId;
++        doctypeText += "\">"
++        doctypeNode.setAttribute("value", doctypeText);
++      }
++      // XXX HACK ALERT Glazou
++      else if (!kColoredSourceView)
++        doctypeNode.collapsed = true;
++    }
++  }
++
++  // Get the entire document's source string
++  var flags = (editor.documentCharacterSet == "ISO-8859-1")
++    ? 32768  // OutputEncodeLatin1Entities
++    : 16384; // OutputEncodeBasicEntities
++  try { 
++    var encodeEntity = gPrefs.getCharPref("editor.encode_entity");
++    var dontEncodeGT = gPrefs.getBoolPref("editor.encode.noGT");
++    switch (encodeEntity) { //OutputEncodeCharacterEntities =
++      case "basic"   : flags = 16384;  break; // OutputEncodeBasicEntities
++      case "latin1"  : flags = 32768;  break; // OutputEncodeLatin1Entities
++      case "html"    : flags = 65536;  break; // OutputEncodeHTMLEntities
++      case "unicode" : flags = 262144; break;
++      case "none"    : flags = 0;      break;
++    }
++    if (dontEncodeGT)
++      flags |= (1 << 21); // DontEncodeGreatherThan
++  } catch (e) { }
++
++  // Kaze: always reformat the HTML code for the "source" view
++  //~ try { 
++    //~ var prettyPrint = gPrefs.getBoolPref("editor.prettyprint");
++    //~ if (prettyPrint)
++    //~ {
++      flags |= 2;      // OutputFormatted
++    //~ }
++  //~ } catch (e) {}
++
++  flags |= 1 << 5; // OutputRaw
++  flags |= 1024;   // OutputLFLineBreak
++
++  if (kColoredSourceView) { // Nvu
++    //flags |= 131072; // colored source view
++
++    NotifyProcessors(kProcessorsBeforeGettingSource, editor.document);
++
++    var mimeType = kHTMLMimeType;
++    /*if (IsXHTMLDocument())
++      mimeType = kXMLMimeType;*/
++    var source = editor.outputToString(mimeType, flags);
++    var start = source.search(/\<span class='/i);
++    if (start == -1) start = 0;
++    gSourceTextEditor.selectAll();
++    // gSourceTextEditor.insertText(source.slice(start));
++
++    if (false /*IsXHTMLDocument()*/)
++    {
++      source = source.replace( /\n$/gi , String(""));
++      source = source.slice(start).replace( /\n/gi , String("</li><li>"));
++    }
++    else
++    {
++      source = source.replace( /<br>$/gi , String("")).replace( /\n$/gi , String(""));
++      source = source.slice(start).replace( /<br>/gi , String("</li><li>")).replace( /\n/gi , String("</li><li>"));
++    }
++
++    source = "<ol><li>" + source + "</li></ol>";
++    InsertColoredSourceView(gSourceTextEditor, source);
++
++    //InsertColoredSourceView(gSourceTextEditor, source.slice(start));
++  }
++  else { // Composer
++    var source = editor.outputToString(kHTMLMimeType, flags);
++    var start = source.search(/<html/i);
++    if (start == -1) start = 0;
++    gSourceTextEditor.selectAll();
++    gSourceTextEditor.insertText(source.slice(start));
++  }
++
++  gSourceTextEditor.resetModificationCount();
++  gSourceTextEditor.addDocumentStateListener(gSourceTextListener);
++  gSourceTextEditor.enableUndo(true);
++  gSourceContentWindow.commandManager.addCommandObserver(gSourceTextObserver, "cmd_undo");
++  gSourceContentWindow.contentWindow.focus();
++  goDoCommand("cmd_moveTop");
++
++  if (false && kColoredSourceView) { // Nvu
++    // let's show the preserved selection :-)
++    var sourceDoc = gSourceTextEditor.document;
++    var startSel  = sourceDoc.getElementById("start-selection");
++    var endSel    = sourceDoc.getElementById("end-selection");
++    if (startSel)
++    {
++      var sourceSel = gSourceTextEditor.selection;
++      sourceSel.removeAllRanges();
++      var range = gSourceTextEditor.document.createRange();
++      if (endSel && (endSel != startSel))
++      {
++        range.setStartBefore(startSel);
++        // <Kaze>
++        //range.setEndAfter(endSel);
++        try { // sometimes 'endSel' is out of bounds
++          range.setEndAfter(endSel);
++        } catch(e) {
++          range.setEndAfter(startSel);
++        }
++        // </Kaze>
++      }
++      else
++      {
++        range.setStartAfter(startSel);
++        range.setEndAfter(startSel);
++      }
++      sourceSel.addRange(range);
++
++      setTimeout("gSourceTextEditor.scrollSelectionIntoView(true)", 100)
++    }
++    else
++      gSourceTextEditor.beginningOfDocument()
++  }
+ }
+ 
+ function viewNodeSource(node) {
++  //var tabeditor = document.getElementById("tabeditor");
++
+   // cancel if the source dock is collapsed
+-  if (!node || gSourceBrowserDeck.collapsed)
++  //if (!node || gSourceBrowserDeck.collapsed)
++  //if (!node || tabeditor.mSourceDeck.hidden)
++  //if (!node || tabeditor.mSourceEditor.hidden)
++  if (!node)
+     return;
+ 
+   highlightNode(null);
+@@ -426,10 +599,11 @@
+   MakePhpAndCommentsInvisible(doc, tmpNode);
+ 
+   // all our content is held by the data:URI and URIs are internally stored as utf-8 (see nsIURI.idl)
+-  var loadFlags = Components.interfaces.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+-  getBrowser().webNavigation
+-              .loadURI("view-source:data:text/html;charset=utf-8," + encodeURIComponent(tmpNode.innerHTML),
+-                       loadFlags, null, null, null);
++  //getBrowser().webNavigation
++  //tabeditor.mSourceEditor.webNavigation
++  gSourceContentWindow.webNavigation
++                      .loadURI("view-source:data:text/html;charset=utf-8," + encodeURIComponent(tmpNode.innerHTML),
++                               Components.interfaces.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE, null, null, null);
+ 
+   delete(tmpNode);
+ }
+@@ -460,22 +634,22 @@
+   //var title = getViewSourceBundle().getString("viewMathMLSourceTitle");
+   //var wrapClass = gWrapLongLines ? ' class="wrap"' : '';
+   var source =
+-    '<html>'
+-  + '<head><title>' + title + '</title>'
+-  + '<link rel="stylesheet" type="text/css" href="' + gViewSourceCSS + '">'
+-  //+ '<style type="text/css">'
+-  //+ '#target { border: dashed 1px; background-color: lightyellow; }'
+-  //+ '</style>'
+-  + '</head>'
+-  + '<body id="viewsource" class="wrap"'
+-  +        ' onload="document.title=\''+title+'\';document.getElementById(\'target\').scrollIntoView(true)">'
+-  + '<pre>'
+-  + getOuterMarkup(topNode, 0)
+-  + '</pre></body></html>'
++      '<html>'
++    + '<head><title>' + title + '</title>'
++    + '<link rel="stylesheet" type="text/css" href="' + gViewSourceCSS + '">'
++    //+ '<style type="text/css">'
++    //+ '#target { border: dashed 1px; background-color: lightyellow; }'
++    //+ '</style>'
++    + '</head>'
++    + '<body id="viewsource" class="wrap"'
++    +        ' onload="document.title=\''+title+'\';document.getElementById(\'target\').scrollIntoView(true)">'
++    + '<pre>'
++    + getOuterMarkup(topNode, 0)
++    + '</pre></body></html>'
+   ; // end
+ 
+   // display
+-  var doc = getBrowser().contentDocument;
++  var doc = gSourceContentWindow.contentDocument;
+   doc.open("text/html", "replace");
+   doc.write(source);
+   doc.close();
+@@ -565,7 +739,7 @@
+ // and set the view_source.wrap_long_lines pref to persist the last state
+ function wrapLongLines() {     // taken from /toolkit/components/viewsource/
+   //var myWrap = window._content.document.body;
+-  var myWrap = getBrowser().contentDocument.body;
++  var myWrap = gSourceContentWindow.contentDocument.body;
+ 
+   if (myWrap.className == '')
+     myWrap.className = 'wrap';
+@@ -589,30 +763,172 @@
+     gPrefs.setBoolPref("view_source.syntax_highlight", highlightSyntax);
+   } catch (ex) {}
+ 
+-  var PageLoader = getBrowser().webNavigation.QueryInterface(pageLoaderIface);
++  var PageLoader = gSourceContentWindow.webNavigation.QueryInterface(pageLoaderIface);
+   PageLoader.loadPage(PageLoader.currentDescriptor, pageLoaderIface.DISPLAY_NORMAL);
+ }
+ 
+ /*****************************************************************************\
+  *                                                                           *
++ *   HTML code parsing                                                       *
++ *                                                                           *
++\*****************************************************************************/
++
++function CancelHTMLSource() { // overrides that in 'comm.jar/editor/content/editor.js'
++  // Don't convert source text back into the DOM document
++  gSourceTextEditor.resetModificationCount();
++  SetEditMode(gPreviousNonSourceEditMode);
++}
++
++function FinishHTMLSource() { // overrides that in 'comm.jar/editor/content/editor.js'
++  // XXX why the fuck do we need to re-generate gSourceTextEditor?
++  delete(gSourceTextEditor);
++  gSourceTextEditor = newSourceTextEditor();
++
++  // Here we need to check whether the HTML source contains <head> and <body> tags
++  // or RebuildDocumentFromSource() will fail.
++  if (IsInHTMLSourceMode()) {
++    var htmlSource = gSourceTextEditor.outputToString(kTextMimeType, 1024); // OutputLFLineBreak
++    if (htmlSource.length > 0) {
++
++      // check <head> node
++      var beginHead = htmlSource.indexOf("<head");
++      if (beginHead == -1) {
++        AlertWithTitle(GetString("Alert"), GetString("NoHeadTag"));
++        // cheat to force back to Source Mode
++        gEditorEditMode = kEditModeDesign;
++        SetEditMode(kEditModeSource);
++        throw Components.results.NS_ERROR_FAILURE;
++      }
++
++      // check <body> node
++      var beginBody = htmlSource.indexOf("<body");
++      if (beginBody == -1) {
++        AlertWithTitle(GetString("Alert"), GetString("NoBodyTag"));
++        // cheat to force back to Source Mode
++        gEditorEditMode = kEditModeDesign;
++        SetEditMode(kEditModeSource);
++        throw Components.results.NS_ERROR_FAILURE;
++      }
++    }
++
++    // convert source back into DOM document
++    RebuildDocumentFromSource();
++    SetEditMode(gPreviousNonSourceEditMode);
++  }
++  else if (gEditedElement) {
++    // XXX needs some code cleaning
++    editNodeApply();
++  }
++}
++
++function RebuildDocumentFromSource() {
++  dump("rebuilding document from source\n");
++  // Only rebuild document if a change was made in source window
++  //if (IsHTMLSourceChanged())
++  var editor = GetCurrentEditor();
++  if (true)
++  {
++    // Reduce the undo count so we don't use too much memory
++    //   during multiple uses of source window 
++    //   (reinserting entire doc caches all nodes)
++    try {
++      editor.transactionManager.maxTransactionCount = 1;
++    } catch (e) {}
++
++    editor.beginTransaction();
++    try {
++      // We are coming from edit source mode,
++      //   so transfer that back into the document
++      var flags = 1024; // nsIDocumentEncoder::OutputLFLineBreak 
++      flags |= 524288;  // nsIDocumentEncoder::OutputLineBreaksWhenClosingLI
++      source = gSourceTextEditor.outputToString(kTextMimeType, flags);
++      dump(source + "\n");
++      editor.rebuildDocumentFromSource(source);
++
++      // Get the text for the <title> from the newly-parsed document
++      // (must do this for proper conversion of "escaped" characters)
++      var title = "";
++      var titlenodelist = editor.document.getElementsByTagName("title");
++      if (titlenodelist)
++      {
++        var titleNode = titlenodelist.item(0);
++        if (titleNode && titleNode.firstChild && titleNode.firstChild.data)
++          title = titleNode.firstChild.data;
++        // XXX HACK glazou
++        if (title == "\n")
++          title = "";
++        // XXX Hack Kaze
++        title = title.replace(/^[\s]*/, '').replace(/[\s]*$/, '');
++      }
++      if (editor.document.title != title)
++        SetDocumentTitle(title);
++
++    } catch (ex) {
++      dump(ex);
++    }
++    editor.endTransaction();
++
++    // Restore unlimited undo count
++    try {
++      editor.transactionManager.maxTransactionCount = -1;
++    } catch (e) {}
++  }
++
++  NotifyProcessors(kProcessorsBeforeBackToNormal, editor.document);
++
++  // Clear out the string buffers
++  //gSourceContentWindow.commandManager.removeCommandObserver(gSourceTextObserver, "cmd_undo");
++  gSourceContentWindow.removeEventListener("blur",     editNodeApply,        true);
++  gSourceContentWindow.removeEventListener("keypress", onKeypressSourceDock, true);
++  gSourceTextEditor.removeDocumentStateListener(gSourceTextListener);
++  gSourceTextEditor.enableUndo(false);
++  if (!kColoredSourceView) { // Composer
++    gSourceTextEditor.selectAll();
++    gSourceTextEditor.deleteSelection(gSourceTextEditor.eNone);
++  }
++  gSourceTextEditor.resetModificationCount();
++
++  gContentWindow.focus();
++}
++
++
++/*****************************************************************************\
++ *                                                                           *
+  *   HTML code editor                                                        *
+  *                                                                           *
+ \*****************************************************************************/
+ 
++function newSourceTextEditor() {
++  //delete(gSourceTextEditor);
++  var srcEditor = gSourceContentWindow.getEditor(gSourceContentWindow.contentWindow);
++  srcEditor instanceof Components.interfaces.nsIPlaintextEditor;
++  return srcEditor;
++
++  //srcEditor.QueryInterface(Components.interfaces.nsIPlaintextEditor);
++  srcEditor.enableUndo(false);
++  srcEditor.rootElement.style.fontFamily = "-moz-fixed";
++  srcEditor.rootElement.style.whiteSpace = "pre";
++  srcEditor.rootElement.style.margin = 0;
++  if (kColoredSourceView) {
++    srcEditor.rootElement.style.backgroundColor = "#f0f0f0";
++    srcEditor.rootElement.setAttribute("_moz_sourceview", "true");
++  }
++  return srcEditor;
++}
++
+ function onClickSourceDock(e) {
+   // cancel if already in edition mode
+   if (gEditedElement)
+     return;
+ 
+-  dump("click\n");
+   if (e.button == 0)
+     editNodeStart();
+-    //editNodeToggle();
+ }
+ 
+ function onKeypressSourceDock(e) {
+   if (e.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+-    // cancel default [Esc] behavior because it would cause gSourceEditor to blur...
++    dump("[ESC]\n");
++    // cancel default [Esc] behavior because it would cause the editor to blur...
+     // which would raise a 'blur' event, thus validating the changes.
+     e.preventDefault();  // required in Gecko 1.8
+     e.stopPropagation();
+@@ -622,86 +938,59 @@
+ }
+ 
+ function editNodeStart() {
++  gSourceTextEditor = newSourceTextEditor();
++
+   // cancel if no editor (should never happen)
+   var editor = GetCurrentEditor();
+-  if (!editor) return;
++  if (!editor) {
++    dump("no editor! Can't enable the source dock.");
++    return;
++  }
+ 
+   // we're entering the source dock, let's ensure it is visible
+-  SetEditMode(kEditModeSplit);
++  if (gEditorEditMode == kEditModeDesign)
++    SetEditMode(kEditModeSplit);
+ 
+   // we can't edit the whole HTML tree with that source dock
+   // so if <html> is selected, edit the <head> node
+-  if (gViewedElement.tagName.toLowerCase() == "html")
+-    gViewedElement = gViewedElement.firstChild;
++  /*
++   *if (gViewedElement.tagName.toLowerCase() == "html")
++   *  gViewedElement = gViewedElement.firstChild;
++   */
+ 
+-  if (kModalSourceDock) { // modal editor
+-    // create gSourceEditor textbox dynamically:
+-    // looks like it's the easiest way to clear its undo history
+-    gSourceEditor = document.createElementNS(XUL_NS, "textbox");
+-    gSourceEditor.setAttribute("flex",      "1");
+-    gSourceEditor.setAttribute("type",      "text");
+-    gSourceEditor.setAttribute("multiline", "true");
+-    gSourceEditor.setAttribute("context",   "editorSourceContext");
+-    gSourceEditor.setAttribute("oninput",   "gSourceEditorModified = true;");
+-    gSourceBrowserDeck.appendChild(gSourceEditor);
++  // focus the editor
++  gSourceContentWindow.contentWindow.focus();
+ 
+-    // get HTML markup
+-    var tagName = gViewedElement.tagName.toLowerCase();
+-    if (tagName == "head" || tagName == "body") {
+-      gSourceEditor.value = gViewedElement.innerHTML;
+-    }
+-    else {
+-      // hide NVU_NS nodes
+-      MakePhpAndCommentsInvisible(gViewedElement.ownerDocument, gViewedElement);
+-      // selected the element and get its HTML code
+-      var selection;
+-      SelectFocusNodeAncestor(gViewedElement);
+-      try {
+-        selection = editor.outputToString("text/html", 35); // OutputWrap+OutputFormatted+OutputSelectionOnly
+-      } catch (e) {}
+-      if (selection)
+-        selection = (selection.replace(/<body[^>]*>/,"")).replace(/<\/body>/,"");
+-      if (selection)
+-        gSourceEditor.value = selection;
+-    }
+-
+-    // Set initial focus
+-    gSourceEditor.focus();
+-    gSourceEditor.setSelectionRange(0,0);
+-    gSourceBrowserDeck.selectedIndex = 1;
+-  }
+-  else {                  // classic editor
+-    // much less to do, the HTML markup being already loaded :-)
+-    gSourceEditor = getBrowser();
+-    gSourceEditor.contentWindow.focus();
+-  }
+-
+   // auto-confirm changes when the user clicks outside the source editor
+-  gSourceEditor.addEventListener("blur",     editNodeApply,        true);
++  gSourceContentWindow.addEventListener("blur",     editNodeApply,        true);
+ 
+-  // cancel default [Esc] behavior because it would cause gSourceEditor to blur
+-  gSourceEditor.addEventListener("keypress", onKeypressSourceDock, true);
++  // cancel default [Esc] behavior because it would cause the editor to blur
++  gSourceContentWindow.addEventListener("keypress", onKeypressSourceDock, true);
+ 
++  // init globals
+   gEditedElement = gViewedElement;
+-  gSourceEditorModified = false;
++  //gSourceEditorModified = false;
+   dump("source dock focused\n");
+ }
+ 
+ function editNodeApply() {
+-  // get an nsIEditor instance on <editor> if needed
+-  if (!kModalSourceDock) {
+-    try {
+-      // XXX
+-			var srcEditor = gSourceEditor.getEditor(gSourceEditor.contentWindow);
+-      //var srcEditor = gSourceEditor.getHTMLEditor(gSourceEditor.contentWindow);
+-      srcEditor instanceof Components.interfaces.nsIPlaintextEditor;
+-      srcEditor instanceof Components.interfaces.nsIHTMLEditor;
+-    } catch (e) { dump (e + "\n"); }
+-    gSourceEditorModified = srcEditor.documentModified;
++  // use RebuildDocumentFromSource if we're in Source mode
++  if (IsInHTMLSourceMode()) {
++    dump("updating whole document\n");
++    RebuildDocumentFromSource();
++    return;
+   }
+ 
++  // get an nsIEditor instance on <editor> 
++  var srcEditor = newSourceTextEditor();
++  /*
++   *var srcEditor = gSourceContentWindow.getEditor(gSourceContentWindow.contentWindow);
++   *srcEditor instanceof Components.interfaces.nsIPlaintextEditor;
++   */
++
+   // cancel if no modifications found
+-  if (!gSourceEditorModified) {
++  //if (!IsHTMLSourceChanged()) {
++  if (!srcEditor.documentModified) {
+     editNodeCancel();
+     return;
+   }
+@@ -711,18 +1000,13 @@
+   if (!editor || !gEditedElement) return;
+ 
+   // get the current element's tag name and HTML markup
+-  var html = null;
+   var tagName = gViewedElement.tagName.toLowerCase();
+-  if (kModalSourceDock) {
+-    html = gSourceEditor.value.replace(/\s*$/, '');
+-  }
+-  else {
+-    html = srcEditor.outputToString(kTextMimeType, 1024).replace(/\s*$/, '');
+-    if (tagName == "head")
+-      html = html.replace(/\s*<head>\s*/, '').replace(/\s*<\/head>\s*/, '');
+-    else if (tagName == "body") // XXX ugly *temporary* hack
+-      html = html.replace(/\s*<body>\s*/, '').replace(/\s*<\/body>\s*/, '');
+-  }
++  // strip <head|body> nodes
++  var html = srcEditor.outputToString(kTextMimeType, 1024).replace(/\s*$/, '');
++  if (tagName == "head")
++    html = html.replace(/\s*<head>\s*/, '').replace(/\s*<\/head>\s*/, '');
++  else if (tagName == "body") // XXX ugly *temporary* hack
++    html = html.replace(/\s*<body>\s*/, '').replace(/\s*<\/body>\s*/, '');
+ 
+   // flush changes
+   dump("updating <" + tagName + ">\n");
+@@ -779,6 +1063,7 @@
+   // this function is triggered when the users presses Alt+Enter:
+   // it can be called to enter the source dock (start editing)
+   // or to leave the source dock or the source tab (flush changes)
++  IsHTMLSourceChanged();
+ 
+   if (IsInHTMLSourceMode()) // if we're in Source mode, apply changes
+     FinishHTMLSource()
+@@ -794,16 +1079,9 @@
+   gEditedElement = null;
+ 
+   // remove OK/Cancel event handlers
+-  gSourceEditor.removeEventListener("blur",     editNodeApply,        true);
+-  gSourceEditor.removeEventListener("keypress", onKeypressSourceDock, true);
++  gSourceContentWindow.removeEventListener("blur",     editNodeApply,        true);
++  gSourceContentWindow.removeEventListener("keypress", onKeypressSourceDock, true);
+ 
+-  // when using the modal editor, destroy the textbox and switch to "view" mode
+-  if (kModalSourceDock) {
+-    gSourceBrowserDeck.selectedIndex = 0;
+-    gSourceBrowserDeck.removeChild(gSourceEditor);
+-    delete(gSourceEditor);
+-  }
+-
+   // set the focus to the main window
+   gContentWindow.focus();
+ }
+Index: helpers.js
+===================================================================
+--- helpers.js	(révision 192)
++++ helpers.js	(révision 193)
+@@ -304,20 +304,20 @@
+   },
+ 
+   // Special directories - useful with portable apps
+-	getSpecialDirectory : function(id) {
+-		// see https://developer.mozilla.org/en/Code_snippets/File_I%2f%2fO#Getting_special_files
++  getSpecialDirectory : function(id) {
++    // see https://developer.mozilla.org/en/Code_snippets/File_I%2f%2fO#Getting_special_files
+     return Components.classes['@mozilla.org/file/directory_service;1']
+-										 .getService(Components.interfaces.nsIProperties)
+-										 .get(id, Components.interfaces.nsIFile);
+-	},
++                     .getService(Components.interfaces.nsIProperties)
++                     .get(id, Components.interfaces.nsIFile);
++  },
+ 
+-	getProfileDirectory : function() {
+-		return getSpecialDirectory("ProfD");
+-	},
++  getProfileDirectory : function() {
++    return getSpecialDirectory("ProfD");
++  },
+ 
+-	getInstallationDirectory : function() {
+-		return getSpecialDirectory("CurProcD");
+-	},
++  getInstallationDirectory : function() {
++    return getSpecialDirectory("CurProcD");
++  },
+ 
+   // debug
+   trace : function(message, sender) {
